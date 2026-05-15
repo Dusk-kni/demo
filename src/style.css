@@ -1,0 +1,53 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "PingFang SC", Arial, sans-serif;
+  background: #f5f7fa;
+  color: #303133;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+.page-container {
+  padding: 20px;
+}
+
+.page-title {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 16px;
+  color: #1f3f2b;
+}
+
+.card {
+  background: #fff;
+  padding: 18px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.status-low {
+  color: #67c23a;
+}
+
+.status-mid {
+  color: #e6a23c;
+}
+
+.status-high {
+  color: #f56c6c;
+}
+
+.map-container {
+  width: 100%;
+  height: calc(100vh - 120px);
+  border-radius: 8px;
+  overflow: hidden;
+}
