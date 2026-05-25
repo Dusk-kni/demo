@@ -1,4 +1,3 @@
-
 <template>
   <div class="login-page">
     <div class="login-container">
@@ -28,50 +27,50 @@
             :class="{ active: loginForm.role === item.value }"
             @click="selectRole(item.value)"
           >
-            <el-icon class="role-icon">
-              <component :is="item.icon" />
-            </el-icon>
+            <div class="role-icon">{{ item.iconText }}</div>
             <div class="role-name">{{ item.label }}</div>
             <div class="role-desc">{{ item.desc }}</div>
           </div>
         </div>
 
-        <el-form
-          ref="loginFormRef"
-          :model="loginForm"
-          :rules="rules"
-          class="login-form"
-          label-position="top"
-        >
-          <el-form-item label="用户名" prop="username">
-            <el-input
+        <form class="login-form" @submit.prevent="handleLogin">
+          <div class="form-item" :class="{ 'has-error': errors.username }">
+            <label class="form-label">用户名</label>
+            <input
               v-model="loginForm.username"
-              size="large"
+              type="text"
+              class="form-input"
               placeholder="请输入用户名"
-              clearable
+              @blur="validateField('username')"
             />
-          </el-form-item>
+            <div v-if="errors.username" class="form-error">{{ errors.username }}</div>
+          </div>
 
-          <el-form-item label="密码" prop="password">
-            <el-input
-              v-model="loginForm.password"
-              size="large"
-              type="password"
-              placeholder="请输入密码"
-              show-password
-            />
-          </el-form-item>
+          <div class="form-item" :class="{ 'has-error': errors.password }">
+            <label class="form-label">密码</label>
+            <div class="input-wrapper">
+              <input
+                v-model="loginForm.password"
+                :type="showPassword ? 'text' : 'password'"
+                class="form-input"
+                placeholder="请输入密码"
+                @blur="validateField('password')"
+              />
+              <button type="button" class="toggle-password" @click="showPassword = !showPassword">
+                {{ showPassword ? '隐藏' : '显示' }}
+              </button>
+            </div>
+            <div v-if="errors.password" class="form-error">{{ errors.password }}</div>
+          </div>
 
-          <el-button
-            type="success"
-            size="large"
-            class="login-button"
-            :loading="loading"
-            @click="handleLogin"
+          <button
+            type="submit"
+            class="btn btn--success btn--large login-button"
+            :disabled="loading"
           >
-            登录系统
-          </el-button>
-        </el-form>
+            {{ loading ? '登录中...' : '登录系统' }}
+          </button>
+        </form>
 
         <div class="account-tip">
           <div>测试账号：</div>
@@ -86,15 +85,9 @@
 
 <script setup lang="ts">
 import { useUserStore } from '../stores/user'
-import { reactive, ref, markRaw } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { FormInstance, FormRules } from 'element-plus'
-import { ElMessage } from 'element-plus'
-import {
-  UserFilled,
-  Management,
-  Reading
-} from '@element-plus/icons-vue'
+import { Message } from '../utils/message'
 import { loginApi } from '../api'
 import type { LoginParams, UserRole } from '../api'
 
@@ -102,13 +95,17 @@ interface RoleOption {
   label: string
   value: UserRole
   desc: string
-  icon: unknown
+  iconText: string
+}
+
+interface FormErrors {
+  username?: string
+  password?: string
 }
 
 const router = useRouter()
-
-const loginFormRef = ref<FormInstance>()
 const loading = ref<boolean>(false)
+const showPassword = ref<boolean>(false)
 
 const loginForm = reactive<LoginParams>({
   username: 'admin',
@@ -116,40 +113,30 @@ const loginForm = reactive<LoginParams>({
   role: 'admin'
 })
 
+const errors = reactive<FormErrors>({})
+
 const roleOptions: RoleOption[] = [
   {
     label: '系统管理员',
     value: 'admin',
     desc: '负责用户权限、数据审核、系统运维',
-    icon: markRaw(Management)
+    iconText: '🛡'
   },
   {
     label: '科研人员',
     value: 'researcher',
     desc: '负责数据上传、查询分析和科研申请',
-    icon: markRaw(Reading)
+    iconText: '🔬'
   },
   {
     label: '普通用户',
     value: 'user',
     desc: '查看火点、预警、应急资源和申请数据',
-    icon: markRaw(UserFilled)
+    iconText: '👤'
   }
 ]
 
-const rules: FormRules<LoginParams> = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
-  ],
-  role: [
-    { required: true, message: '请选择用户身份', trigger: 'change' }
-  ]
-}
 const { setUser } = useUserStore()
-
 
 function selectRole(role: UserRole): void {
   loginForm.role = role
@@ -163,38 +150,58 @@ function selectRole(role: UserRole): void {
   }
 
   loginForm.password = '123456'
+  errors.username = undefined
+  errors.password = undefined
 }
 
-function handleLogin(): void {
-  if (!loginFormRef.value) return
-
-  loginFormRef.value.validate(async valid => {
-    if (!valid) return
-
-    loading.value = true
-
-    const res = await loginApi({
-      username: loginForm.username,
-      password: loginForm.password,
-      role: loginForm.role
-    })
-
-    loading.value = false
-
-    if (res.code === 200 && res.data) {
-      localStorage.setItem('token', res.data.token)
-
-      // 关键：更新响应式用户状态
-      setUser(res.data.userInfo)
-
-      ElMessage.success(`${res.data.userInfo.roleName}登录成功`)
-      router.push('/dashboard')
-    } else {
-      ElMessage.error(res.message || '登录失败')
+function validateField(field: keyof FormErrors): boolean {
+  if (field === 'username') {
+    if (!loginForm.username.trim()) {
+      errors.username = '请输入用户名'
+      return false
     }
-  })
+    errors.username = undefined
+  }
+
+  if (field === 'password') {
+    if (!loginForm.password.trim()) {
+      errors.password = '请输入密码'
+      return false
+    }
+    errors.password = undefined
+  }
+
+  return true
 }
 
+function validateAll(): boolean {
+  const u = validateField('username')
+  const p = validateField('password')
+  return u && p
+}
+
+async function handleLogin(): Promise<void> {
+  if (!validateAll()) return
+
+  loading.value = true
+
+  const res = await loginApi({
+    username: loginForm.username,
+    password: loginForm.password,
+    role: loginForm.role
+  })
+
+  loading.value = false
+
+  if (res.code === 200 && res.data) {
+    localStorage.setItem('token', res.data.token)
+    setUser(res.data.userInfo)
+    Message.success(`${res.data.userInfo.roleName}登录成功`)
+    router.push('/dashboard')
+  } else {
+    Message.error(res.message || '登录失败')
+  }
+}
 </script>
 
 <style scoped>
@@ -299,7 +306,6 @@ function handleLogin(): void {
 
 .role-icon {
   font-size: 30px;
-  color: #1f8f45;
 }
 
 .role-name {
@@ -317,6 +323,107 @@ function handleLogin(): void {
 
 .login-form {
   margin-top: 28px;
+}
+
+.form-item {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #303133;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #1f8f45;
+}
+
+.form-input::placeholder {
+  color: #c0c4cc;
+}
+
+.has-error .form-input {
+  border-color: #f56c6c;
+}
+
+.form-error {
+  font-size: 12px;
+  color: #f56c6c;
+  margin-top: 4px;
+}
+
+.input-wrapper {
+  position: relative;
+}
+
+.input-wrapper .form-input {
+  padding-right: 56px;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #909399;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.toggle-password:hover {
+  color: #1f8f45;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn--large {
+  padding: 12px 20px;
+  font-size: 16px;
+}
+
+.btn--success {
+  background: #1f8f45;
+  color: #fff;
+}
+
+.btn--success:hover {
+  background: #1a7d3c;
+}
+
+.btn--success:disabled {
+  background: #a0cfff;
+  cursor: not-allowed;
 }
 
 .login-button {

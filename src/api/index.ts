@@ -518,3 +518,217 @@ export function getEmergencyResourcesApi(): Promise<ApiResponse<EmergencyResourc
 }
 
 export default service
+// import axios from 'axios'
+// import type { AxiosInstance, InternalAxiosRequestConfig } from 'axios'
+
+// // ==================== 类型定义（完全保留原有结构） ====================
+// export interface ApiResponse<T> {
+//   code: number
+//   message: string
+//   data: T
+// }
+
+// export type UserRole = 'admin' | 'researcher' | 'user'
+
+// export type PermissionCode =
+//   | 'UC01'
+//   | 'UC02'
+//   | 'UC03'
+//   | 'UC04'
+//   | 'UC05'
+//   | 'UC06'
+//   | 'UC07'
+//   | 'UC08'
+//   | 'UC09'
+//   | 'UC10'
+//   | 'UC11'
+//   | 'UC12'
+//   | 'UC13'
+//   | 'UC14'
+//   | 'UC15'
+//   | 'UC16'
+//   | 'UC17'
+//   | 'UC18'
+
+// export interface LoginParams {
+//   username: string
+//   password: string
+//   role: UserRole
+// }
+
+// export interface RegisterParams {
+//   username: string
+//   password: string
+//   role: UserRole
+//   nickname?: string
+//   phone?: string
+// }
+
+// export interface UserInfo {
+//   id: number
+//   username: string
+//   nickname: string
+//   role: UserRole
+//   roleName: string
+//   permissions: PermissionCode[]
+// }
+
+// export interface LoginResult {
+//   token: string
+//   userInfo: UserInfo
+// }
+
+// export interface StoredUser extends UserInfo {
+//   password: string
+//   phone?: string
+//   status?: '正常' | '已禁用'
+// }
+
+// export interface FirePoint {
+//   id: number
+//   name: string
+//   lon: number
+//   lat: number
+//   level: string
+//   temperature: number
+//   time: string
+//   source: string
+// }
+
+// export interface RiskHeatPoint {
+//   lon: number
+//   lat: number
+//   value: number
+//   level: string
+// }
+
+// export interface EmergencyResource {
+//   id: number
+//   name: string
+//   type: string
+//   lon: number
+//   lat: number
+//   phone: string
+// }
+
+// // ==================== Axios 实例配置（对接真实后端） ====================
+// const service: AxiosInstance = axios.create({
+//   // 从 .env 文件读取后端地址
+//   baseURL: import.meta.env.VITE_API_BASE_URL,
+//   timeout: 10000
+// })
+
+// // 请求拦截器：自动携带 Token
+// service.interceptors.request.use(
+//   (config: InternalAxiosRequestConfig) => {
+//     const token = localStorage.getItem('token')
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`
+//     }
+//     return config
+//   },
+//   error => Promise.reject(error)
+// )
+
+// // 响应拦截器：直接返回后端数据
+// service.interceptors.response.use(
+//   response => response.data,
+//   error => Promise.reject(error)
+// )
+
+// // ==================== 核心接口（纯真实后端调用） ====================
+
+// /**
+//  * 登录接口
+//  */
+// export function loginApi(data: LoginParams): Promise<ApiResponse<LoginResult | null>> {
+//   return service.post('/api/login', data)
+// }
+
+// /**
+//  * 注册接口
+//  */
+// export function registerApi(data: RegisterParams): Promise<ApiResponse<LoginResult | null>> {
+//   return service.post('/api/register', data)
+// }
+
+// /**
+//  * 获取所有用户
+//  */
+// export function getUsersApi(): Promise<ApiResponse<StoredUser[]>> {
+//   return service.get('/api/users')
+// }
+
+// /**
+//  * 新增用户
+//  */
+// export function addUserApi(
+//   data: {
+//     username: string
+//     password: string
+//     role: UserRole
+//     nickname?: string
+//     phone?: string
+//     permissions?: PermissionCode[]
+//   }
+// ): Promise<ApiResponse<StoredUser | null>> {
+//   return service.post('/api/users', data)
+// }
+
+// /**
+//  * 更新用户
+//  */
+// export function updateUserApi(
+//   data: Partial<StoredUser> & { id: number }
+// ): Promise<ApiResponse<StoredUser | null>> {
+//   return service.put(`/api/users/${data.id}`, data)
+// }
+
+// /**
+//  * 删除用户
+//  */
+// export function deleteUserApi(id: number): Promise<ApiResponse<null>> {
+//   return service.delete(`/api/users/${id}`)
+// }
+
+// // ==================== 业务数据接口 ====================
+
+// /**
+//  * 获取火点数据
+//  */
+// export function getFirePointsApi(): Promise<ApiResponse<FirePoint[]>> {
+//   return service.get('/api/fire-points')
+// }
+
+// /**
+//  * 获取火险等级热力数据
+//  */
+// export function getRiskHeatApi(): Promise<ApiResponse<RiskHeatPoint[]>> {
+//   return service.get('/api/risk-heat')
+// }
+
+// /**
+//  * 获取应急资源数据
+//  */
+// export function getEmergencyResourcesApi(): Promise<ApiResponse<EmergencyResource[]>> {
+//   return service.get('/api/emergency-resources')
+// }
+
+// // ==================== 工具函数（保持不变） ====================
+// export function getCurrentUser(): UserInfo | null {
+//   const userInfoStr = localStorage.getItem('userInfo')
+//   if (!userInfoStr) return null
+//   try {
+//     return JSON.parse(userInfoStr) as UserInfo
+//   } catch {
+//     return null
+//   }
+// }
+
+// export function hasPermission(permission: PermissionCode): boolean {
+//   const userInfo = getCurrentUser()
+//   if (!userInfo) return false
+//   return userInfo.permissions.includes(permission)
+// }
+
+// export default service

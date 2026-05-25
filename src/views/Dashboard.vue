@@ -2,35 +2,27 @@
   <div class="page-container">
     <div class="page-title">系统首页</div>
 
-    <el-row :gutter="16">
-      <el-col :span="6">
-        <div class="card stat-card">
-          <div class="stat-value">128</div>
-          <div class="stat-label">火点数据总量</div>
-        </div>
-      </el-col>
+    <div class="stat-row">
+      <div class="card stat-card">
+        <div class="stat-value">128</div>
+        <div class="stat-label">火点数据总量</div>
+      </div>
 
-      <el-col :span="6">
-        <div class="card stat-card">
-          <div class="stat-value">36</div>
-          <div class="stat-label">遥感影像数量</div>
-        </div>
-      </el-col>
+      <div class="card stat-card">
+        <div class="stat-value">36</div>
+        <div class="stat-label">遥感影像数量</div>
+      </div>
 
-      <el-col :span="6">
-        <div class="card stat-card">
-          <div class="stat-value">12</div>
-          <div class="stat-label">应急资源点</div>
-        </div>
-      </el-col>
+      <div class="card stat-card">
+        <div class="stat-value">12</div>
+        <div class="stat-label">应急资源点</div>
+      </div>
 
-      <el-col :span="6">
-        <div class="card stat-card">
-          <div class="stat-value">5</div>
-          <div class="stat-label">当前预警数量</div>
-        </div>
-      </el-col>
-    </el-row>
+      <div class="card stat-card">
+        <div class="stat-value">5</div>
+        <div class="stat-label">当前预警数量</div>
+      </div>
+    </div>
 
     <div class="card">
       <h3>平台说明</h3>
@@ -46,7 +38,14 @@
 <script setup lang="ts"></script>
 
 <style scoped>
+.stat-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .stat-card {
+  flex: 1;
   text-align: center;
 }
 

@@ -3,21 +3,33 @@
     <div class="page-title">数据分类管理</div>
 
     <div class="card">
-      <el-button type="primary">新增分类</el-button>
+      <button class="btn btn--primary">新增分类</button>
     </div>
 
     <div class="card">
-      <el-table :data="tableData" border stripe>
-        <el-table-column prop="name" label="分类名称" />
-        <el-table-column prop="code" label="分类编码" />
-        <el-table-column prop="desc" label="描述" />
-        <el-table-column label="操作" width="180">
-          <template #default>
-            <el-button size="small" type="primary">编辑</el-button>
-            <el-button size="small" type="danger">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>分类名称</th>
+            <th>分类编码</th>
+            <th>描述</th>
+            <th style="width:180px">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in tableData" :key="row.code">
+            <td>{{ row.name }}</td>
+            <td>{{ row.code }}</td>
+            <td>{{ row.desc }}</td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn--primary btn--small">编辑</button>
+                <button class="btn btn--danger btn--small">删除</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
@@ -41,3 +53,74 @@ const tableData = [
   }
 ]
 </script>
+
+<style scoped>
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  text-align: left;
+}
+
+.table th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #303133;
+}
+
+.table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.table tbody tr:hover {
+  background: #f0f9eb;
+}
+
+.action-group {
+  display: flex;
+  gap: 6px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn--small {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.btn--primary {
+  background: #409eff;
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #337ecc;
+}
+
+.btn--danger {
+  background: #f56c6c;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #e64242;
+}
+</style>

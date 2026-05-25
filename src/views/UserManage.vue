@@ -3,127 +3,178 @@
     <div class="page-title">用户与权限管理</div>
 
     <div class="card" style="display:flex; gap:8px;">
-      <el-button type="primary" @click="openAdd">新增用户</el-button>
-      <el-button type="success" @click="refreshUsers">刷新列表</el-button>
+      <button class="btn btn--primary" @click="openAdd">新增用户</button>
+      <button class="btn btn--success" @click="refreshUsers">刷新列表</button>
     </div>
 
     <div class="card">
-      <el-table :data="users" border stripe>
-        <el-table-column prop="username" label="用户名" />
-        <el-table-column prop="roleName" label="角色" />
-        <el-table-column prop="phone" label="联系电话" />
-        <el-table-column prop="status" label="状态">
-          <template #default="{ row }">
-            <el-tag :type="row.status === '正常' ? 'success' : 'danger'">
-              {{ row.status }}
-            </el-tag>
-          </template>
-        </el-table-column>
-
-        <el-table-column label="操作" width="360">
-          <template #default="{ row }">
-            <el-button size="small" type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button size="small" type="warning" @click="openAssignPerms(row)">分配权限</el-button>
-            <el-button
-              size="small"
-              :type="row.status === '正常' ? 'danger' : 'success'"
-              @click="toggleStatus(row)"
-            >
-              {{ row.status === '正常' ? '禁用' : '启用' }}
-            </el-button>
-            <el-button size="small" type="danger" @click="confirmDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>用户名</th>
+            <th>角色</th>
+            <th>联系电话</th>
+            <th>状态</th>
+            <th style="width:360px">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="row in users" :key="row.id">
+            <td>{{ row.username }}</td>
+            <td>{{ row.roleName }}</td>
+            <td>{{ row.phone }}</td>
+            <td>
+              <span class="tag" :class="row.status === '正常' ? 'tag--success' : 'tag--danger'">
+                {{ row.status }}
+              </span>
+            </td>
+            <td>
+              <div class="action-group">
+                <button class="btn btn--primary btn--small" @click="openEdit(row)">编辑</button>
+                <button class="btn btn--warning btn--small" @click="openAssignPerms(row)">分配权限</button>
+                <button
+                  class="btn btn--small"
+                  :class="row.status === '正常' ? 'btn--danger' : 'btn--success'"
+                  @click="toggleStatus(row)"
+                >
+                  {{ row.status === '正常' ? '禁用' : '启用' }}
+                </button>
+                <button class="btn btn--danger btn--small" @click="confirmDelete(row)">删除</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
 
-    <!-- 新增/编辑用户弹窗 -->
-    <el-dialog v-model="userDialogVisible" :title="form.id ? '编辑用户' : '新增用户'">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" autocomplete="off" :disabled="!!form.id" />
-        </el-form-item>
+    <div v-if="userDialogVisible" class="modal-overlay" @click.self="userDialogVisible = false">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>{{ form.id ? '编辑用户' : '新增用户' }}</h3>
+          <button class="modal-close" @click="userDialogVisible = false">&times;</button>
+        </div>
 
-        <el-form-item label="密码" :prop="form.id ? '' : 'password'">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="创建用户请填写，编辑时不改则留空"
-            show-password
-          />
-        </el-form-item>
+        <div class="modal-body">
+          <div class="form-item" :class="{ 'has-error': formErrors.username }">
+            <label class="form-label">用户名</label>
+            <input
+              v-model="form.username"
+              class="form-input"
+              :disabled="!!form.id"
+              @blur="validateForm('username')"
+            />
+            <div v-if="formErrors.username" class="form-error">{{ formErrors.username }}</div>
+          </div>
 
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="form.role" placeholder="请选择角色">
-            <el-option label="系统管理员" value="admin" />
-            <el-option label="科研人员" value="researcher" />
-            <el-option label="普通用户" value="user" />
-          </el-select>
-        </el-form-item>
+          <div class="form-item" :class="{ 'has-error': formErrors.password }">
+            <label class="form-label">密码</label>
+            <input
+              v-model="form.password"
+              type="password"
+              class="form-input"
+              placeholder="创建用户请填写，编辑时不改则留空"
+              @blur="validateForm('password')"
+            />
+            <div v-if="formErrors.password" class="form-error">{{ formErrors.password }}</div>
+          </div>
 
-        <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" />
-        </el-form-item>
+          <div class="form-item" :class="{ 'has-error': formErrors.role }">
+            <label class="form-label">角色</label>
+            <select v-model="form.role" class="form-select" @change="validateForm('role')">
+              <option value="">请选择角色</option>
+              <option value="admin">系统管理员</option>
+              <option value="researcher">科研人员</option>
+              <option value="user">普通用户</option>
+            </select>
+            <div v-if="formErrors.role" class="form-error">{{ formErrors.role }}</div>
+          </div>
 
-        <el-form-item label="联系电话" prop="phone">
-          <el-input v-model="form.phone" />
-        </el-form-item>
-      </el-form>
+          <div class="form-item">
+            <label class="form-label">昵称</label>
+            <input v-model="form.nickname" class="form-input" />
+          </div>
 
-      <template #footer>
-        <el-button @click="userDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveUser">确定</el-button>
-      </template>
-    </el-dialog>
+          <div class="form-item">
+            <label class="form-label">联系电话</label>
+            <input v-model="form.phone" class="form-input" />
+          </div>
+        </div>
 
-    <!-- 权限分配弹窗 -->
-    <el-dialog v-model="permDialogVisible" title="分配权限" width="520px">
-      <div style="margin-bottom:12px">为用户 <strong>{{ currentAssignUsername }}</strong> 分配权限：</div>
+        <div class="modal-footer">
+          <button class="btn btn--default" @click="userDialogVisible = false">取消</button>
+          <button class="btn btn--primary" @click="saveUser">确定</button>
+        </div>
+      </div>
+    </div>
 
-      <el-checkbox-group v-model="selectedPerms">
-        <el-row :gutter="12">
-          <el-col v-for="p in allPermissions" :key="p.code" :span="12">
-            <el-checkbox :label="p.code">{{ p.label }}</el-checkbox>
-          </el-col>
-        </el-row>
-      </el-checkbox-group>
+    <div v-if="permDialogVisible" class="modal-overlay" @click.self="permDialogVisible = false">
+      <div class="modal" style="width:560px">
+        <div class="modal-header">
+          <h3>分配权限</h3>
+          <button class="modal-close" @click="permDialogVisible = false">&times;</button>
+        </div>
 
-      <template #footer>
-        <el-button @click="permDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="savePerms">保存权限</el-button>
-      </template>
-    </el-dialog>
+        <div class="modal-body">
+          <div style="margin-bottom:12px">为用户 <strong>{{ currentAssignUsername }}</strong> 分配权限：</div>
+
+          <div class="perm-grid">
+            <label
+              v-for="p in allPermissions"
+              :key="p.code"
+              class="checkbox-item"
+            >
+              <input
+                type="checkbox"
+                :value="p.code"
+                :checked="selectedPerms.includes(p.code)"
+                @change="togglePerm(p.code)"
+              />
+              <span>{{ p.label }}</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn--default" @click="permDialogVisible = false">取消</button>
+          <button class="btn btn--primary" @click="savePerms">保存权限</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import type { FormInstance } from 'element-plus'
+import { Message } from '../utils/message'
 import {
   getUsersApi,
   addUserApi,
   updateUserApi,
-  deleteUserApi,
-  StoredUser,
-  PermissionCode,
-  UserRole
+  deleteUserApi
 } from '../api'
+import type { StoredUser, PermissionCode, UserRole } from '../api'
 
 const users = ref<StoredUser[]>([])
 
 const userDialogVisible = ref(false)
 const permDialogVisible = ref(false)
 
-const formRef = ref<FormInstance>()
-const form = reactive<{
+interface FormState {
   id?: number
   username: string
   password?: string
   role?: UserRole
   nickname?: string
   phone?: string
-}>({
+}
+
+interface FormErrorState {
+  username?: string
+  password?: string
+  role?: string
+}
+
+const form = reactive<FormState>({
   id: undefined,
   username: '',
   password: '',
@@ -132,13 +183,8 @@ const form = reactive<{
   phone: ''
 })
 
-const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  role: [{ required: true, message: '请选择角色', trigger: 'change' }]
-}
+const formErrors = reactive<FormErrorState>({})
 
-// 权限列表（可根据需要完善描述）
 const allPermissions: { code: PermissionCode; label: string }[] = [
   { code: 'UC01', label: '基础数据查看 (UC01)' },
   { code: 'UC02', label: '统计视图 (UC02)' },
@@ -169,7 +215,7 @@ async function loadUsers() {
   if (res.code === 200) {
     users.value = res.data
   } else {
-    ElMessage.error(res.message || '加载用户失败')
+    Message.error(res.message || '加载用户失败')
   }
 }
 
@@ -179,7 +225,7 @@ onMounted(() => {
 
 function refreshUsers() {
   loadUsers()
-  ElMessage.success('已刷新用户列表')
+  Message.success('已刷新用户列表')
 }
 
 function openAdd() {
@@ -189,6 +235,9 @@ function openAdd() {
   form.role = 'user'
   form.nickname = ''
   form.phone = ''
+  formErrors.username = undefined
+  formErrors.password = undefined
+  formErrors.role = undefined
   userDialogVisible.value = true
 }
 
@@ -199,71 +248,101 @@ function openEdit(row: StoredUser) {
   form.role = row.role
   form.nickname = row.nickname
   form.phone = row.phone
+  formErrors.username = undefined
+  formErrors.password = undefined
+  formErrors.role = undefined
   userDialogVisible.value = true
 }
 
-async function saveUser() {
-  if (!formRef.value) return
-
-  // el-form 的 validate 回调写法（与 Login.vue 保持一致）
-  formRef.value.validate(async valid => {
-    if (!valid) return
-
-    if (form.id) {
-      // 编辑
-      const payload: Partial<StoredUser> & { id: number } = {
-        id: form.id,
-        nickname: form.nickname,
-        phone: form.phone,
-        role: form.role
-      }
-      // 只有在填写密码时才更新密码
-      if (form.password) {
-        payload.password = form.password
-      }
-
-      const res = await updateUserApi(payload)
-      if (res.code === 200 && res.data) {
-        ElMessage.success('用户更新成功')
-        userDialogVisible.value = false
-        loadUsers()
-      } else {
-        ElMessage.error(res.message || '更新失败')
-      }
-    } else {
-      // 新增
-      if (!form.password) {
-        ElMessage.error('请填写密码')
-        return
-      }
-
-      const res = await addUserApi({
-        username: form.username,
-        password: form.password!,
-        role: form.role!,
-        nickname: form.nickname,
-        phone: form.phone
-      })
-
-      if (res.code === 200 && res.data) {
-        ElMessage.success('新增用户成功')
-        userDialogVisible.value = false
-        loadUsers()
-      } else {
-        ElMessage.error(res.message || '新增失败')
-      }
+function validateForm(field: keyof FormErrorState): boolean {
+  if (field === 'username') {
+    if (!form.username.trim()) {
+      formErrors.username = '请输入用户名'
+      return false
     }
-  })
+    formErrors.username = undefined
+  }
+
+  if (field === 'password') {
+    if (!form.id && !form.password?.trim()) {
+      formErrors.password = '请输入密码'
+      return false
+    }
+    formErrors.password = undefined
+  }
+
+  if (field === 'role') {
+    if (!form.role) {
+      formErrors.role = '请选择角色'
+      return false
+    }
+    formErrors.role = undefined
+  }
+
+  return true
+}
+
+function validateAllForm(): boolean {
+  const u = validateForm('username')
+  const p = validateForm('password')
+  const r = validateForm('role')
+  return u && p && r
+}
+
+async function saveUser() {
+  if (!validateAllForm()) return
+
+  if (form.id) {
+    const payload: Partial<StoredUser> & { id: number } = {
+      id: form.id,
+      nickname: form.nickname,
+      phone: form.phone,
+      role: form.role
+    }
+    if (form.password) {
+      payload.password = form.password
+    }
+
+    const res = await updateUserApi(payload)
+    if (res.code === 200 && res.data) {
+      Message.success('用户更新成功')
+      userDialogVisible.value = false
+      loadUsers()
+    } else {
+      Message.error(res.message || '更新失败')
+    }
+  } else {
+    if (!form.password) {
+      Message.error('请填写密码')
+      return
+    }
+
+    const res = await addUserApi({
+      username: form.username,
+      password: form.password!,
+      role: form.role!,
+      nickname: form.nickname,
+      phone: form.phone
+    })
+
+    if (res.code === 200 && res.data) {
+      Message.success('新增用户成功')
+      userDialogVisible.value = false
+      loadUsers()
+    } else {
+      Message.error(res.message || '新增失败')
+    }
+  }
 }
 
 async function toggleStatus(row: StoredUser) {
   const newStatus = row.status === '正常' ? '已禁用' : '正常'
   const res = await updateUserApi({ id: row.id, status: newStatus })
   if (res.code === 200) {
-    ElMessage.success(`用户已${newStatus === '正常' ? '启用' : '禁用'}`)
+    Message.success(`用户已${newStatus === '正常' ? '启用' : '禁用'}`)
     loadUsers()
   } else {
-    ElMessage.error(res.message || '操作失败')
+    Message.error(res.message || '操作失败')
   }
 }
 
@@ -276,10 +355,10 @@ function confirmDelete(row: StoredUser) {
 async function deleteUser(id: number) {
   const res = await deleteUserApi(id)
   if (res.code === 200) {
-    ElMessage.success('删除成功')
+    Message.success('删除成功')
     loadUsers()
   } else {
-    ElMessage.error(res.message || '删除失败')
+    Message.error(res.message || '删除失败')
   }
 }
 
@@ -288,6 +367,15 @@ function openAssignPerms(row: StoredUser) {
   currentAssignUsername.value = row.username
   selectedPerms.value = Array.isArray(row.permissions) ? [...row.permissions] : []
   permDialogVisible.value = true
+}
+
+function togglePerm(code: PermissionCode) {
+  const idx = selectedPerms.value.indexOf(code)
+  if (idx === -1) {
+    selectedPerms.value.push(code)
+  } else {
+    selectedPerms.value.splice(idx, 1)
+  }
 }
 
 async function savePerms() {
@@ -299,17 +387,279 @@ async function savePerms() {
   })
 
   if (res.code === 200) {
-    ElMessage.success('权限保存成功')
+    Message.success('权限保存成功')
     permDialogVisible.value = false
     loadUsers()
   } else {
-    ElMessage.error(res.message || '保存权限失败')
+    Message.error(res.message || '保存权限失败')
   }
 }
 </script>
 
 <style scoped>
-.page-container {
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 10px 12px;
+  border: 1px solid #ebeef5;
+  text-align: left;
+}
+
+.table th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #303133;
+}
+
+.table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.table tbody tr:hover {
+  background: #f0f9eb;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.tag--success {
+  background: #f0f9eb;
+  color: #67c23a;
+  border: 1px solid #e1f3d8;
+}
+
+.tag--danger {
+  background: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fde2e2;
+}
+
+.tag--warning {
+  background: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #faecd8;
+}
+
+.action-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn--small {
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+.btn--primary {
+  background: #409eff;
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #337ecc;
+}
+
+.btn--success {
+  background: #1f8f45;
+  color: #fff;
+}
+
+.btn--success:hover {
+  background: #1a7d3c;
+}
+
+.btn--warning {
+  background: #e6a23c;
+  color: #fff;
+}
+
+.btn--warning:hover {
+  background: #cf8c2e;
+}
+
+.btn--danger {
+  background: #f56c6c;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #e64242;
+}
+
+.btn--default {
+  background: #fff;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+}
+
+.btn--default:hover {
+  color: #1f8f45;
+  border-color: #1f8f45;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  width: 520px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #909399;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: #303133;
+}
+
+.modal-body {
   padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #ebeef5;
+}
+
+.form-item {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 6px;
+}
+
+.form-input,
+.form-select {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #303133;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-input:focus,
+.form-select:focus {
+  border-color: #1f8f45;
+}
+
+.form-input:disabled {
+  background: #f5f7fa;
+  color: #c0c4cc;
+  cursor: not-allowed;
+}
+
+.form-input::placeholder {
+  color: #c0c4cc;
+}
+
+.has-error .form-input,
+.has-error .form-select {
+  border-color: #f56c6c;
+}
+
+.form-error {
+  font-size: 12px;
+  color: #f56c6c;
+  margin-top: 4px;
+}
+
+.perm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #303133;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #1f8f45;
 }
 </style>

@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { Message } from '../utils/message'
 import type { PermissionCode } from '../api'
 import { getCurrentUser } from '../api'
 
@@ -161,7 +161,7 @@ router.beforeEach((to, from, next) => {
     )
 
     if (!hasAuth) {
-      ElMessage.warning('当前角色无权访问该功能模块')
+      Message.warning('当前角色无权访问该功能模块')
       next('/dashboard')
       return
     }

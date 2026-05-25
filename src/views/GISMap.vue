@@ -1,33 +1,14 @@
 <template>
   <div class="gis-page">
     <div class="toolbar">
-      <el-button type="primary" @click="loadFirePoints">
-        加载火点
-      </el-button>
+      <button class="btn btn--primary" @click="loadFirePoints">加载火点</button>
+      <button class="btn btn--warning" @click="loadRiskHeat">加载火险热力</button>
+      <button class="btn btn--success" @click="loadResources">加载应急资源</button>
+      <button class="btn btn--danger" @click="clearLayers">清除图层</button>
+      <button class="btn btn--default" @click="locateToSichuan">定位四川</button>
 
-      <el-button type="warning" @click="loadRiskHeat">
-        加载火险热力
-      </el-button>
-
-      <el-button type="success" @click="loadResources">
-        加载应急资源
-      </el-button>
-
-      <el-button type="danger" @click="clearLayers">
-        清除图层
-      </el-button>
-
-      <el-button @click="locateToSichuan">
-        定位四川
-      </el-button>
-
-      <el-tag type="danger">
-        当前火点：{{ fireCount }}
-      </el-tag>
-
-      <el-tag type="warning">
-        高风险点：{{ highRiskCount }}
-      </el-tag>
+      <span class="tag tag--danger">当前火点：{{ fireCount }}</span>
+      <span class="tag tag--warning">高风险点：{{ highRiskCount }}</span>
     </div>
 
     <div class="content">
@@ -36,34 +17,41 @@
       <div class="side-panel">
         <h3>空间态势信息</h3>
 
-        <el-descriptions :column="1" border>
-          <el-descriptions-item label="监测区域">
-            四川省重点林区
-          </el-descriptions-item>
-          <el-descriptions-item label="遥感数据">
-            Sentinel-2 / Landsat-9 / MODIS
-          </el-descriptions-item>
-          <el-descriptions-item label="火点提取">
-            SWIR阈值 + NDVI + 形态学滤波
-          </el-descriptions-item>
-          <el-descriptions-item label="火险模型">
-            AHP加权叠加
-          </el-descriptions-item>
-        </el-descriptions>
+        <div class="desc-list">
+          <div class="desc-row">
+            <div class="desc-label">监测区域</div>
+            <div class="desc-value">四川省重点林区</div>
+          </div>
+          <div class="desc-row">
+            <div class="desc-label">遥感数据</div>
+            <div class="desc-value">Sentinel-2 / Landsat-9 / MODIS</div>
+          </div>
+          <div class="desc-row">
+            <div class="desc-label">火点提取</div>
+            <div class="desc-value">SWIR阈值 + NDVI + 形态学滤波</div>
+          </div>
+          <div class="desc-row">
+            <div class="desc-label">火险模型</div>
+            <div class="desc-value">AHP加权叠加</div>
+          </div>
+        </div>
 
         <h3 style="margin-top: 20px">图层控制</h3>
 
-        <el-checkbox v-model="layerVisible.fire" @change="toggleFireLayer">
-          火点标注
-        </el-checkbox>
+        <label class="checkbox-item">
+          <input type="checkbox" v-model="layerVisible.fire" @change="toggleFireLayer" />
+          <span>火点标注</span>
+        </label>
 
-        <el-checkbox v-model="layerVisible.risk" @change="toggleRiskLayer">
-          火险等级点
-        </el-checkbox>
+        <label class="checkbox-item">
+          <input type="checkbox" v-model="layerVisible.risk" @change="toggleRiskLayer" />
+          <span>火险等级点</span>
+        </label>
 
-        <el-checkbox v-model="layerVisible.resource" @change="toggleResourceLayer">
-          应急资源
-        </el-checkbox>
+        <label class="checkbox-item">
+          <input type="checkbox" v-model="layerVisible.resource" @change="toggleResourceLayer" />
+          <span>应急资源</span>
+        </label>
 
         <h3 style="margin-top: 20px">图例</h3>
 
@@ -101,7 +89,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import L from 'leaflet'
 import type { Map, LayerGroup, Polygon } from 'leaflet'
-import { ElMessage } from 'element-plus'
+import { Message } from '../utils/message'
 import {
   getFirePointsApi,
   getRiskHeatApi,
@@ -141,8 +129,19 @@ function initMap(): void {
     zoom: 7
   })
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap contributors'
+  const satelliteLayer = L.tileLayer('https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}', {
+    attribution: '© 高德地图',
+    subdomains: ['1', '2', '3', '4'],
+    maxZoom: 18,
+    minZoom: 3
+  }).addTo(map)
+
+  const labelLayer = L.tileLayer('https://webst0{s}.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}', {
+    attribution: '© 高德地图',
+    subdomains: ['1', '2', '3', '4'],
+    maxZoom: 18,
+    minZoom: 3,
+    opacity: 0.8
   }).addTo(map)
 
   fireLayer = L.layerGroup().addTo(map)
@@ -215,7 +214,7 @@ async function loadFirePoints(): Promise<void> {
       marker.addTo(fireLayer!)
     })
 
-    ElMessage.success('火点图层加载完成')
+    Message.success('火点图层加载完成')
   }
 }
 
@@ -260,7 +259,7 @@ async function loadRiskHeat(): Promise<void> {
       circle.addTo(riskLayer!)
     })
 
-    ElMessage.success('火险热力图层加载完成')
+    Message.success('火险热力图层加载完成')
   }
 }
 
@@ -285,7 +284,7 @@ async function loadResources(): Promise<void> {
       marker.addTo(resourceLayer!)
     })
 
-    ElMessage.success('应急资源图层加载完成')
+    Message.success('应急资源图层加载完成')
   }
 }
 
@@ -297,37 +296,37 @@ function clearLayers(): void {
   fireCount.value = 0
   highRiskCount.value = 0
 
-  ElMessage.info('业务图层已清除')
+  Message.info('业务图层已清除')
 }
 
 function locateToSichuan(): void {
   map?.setView([30.67, 104.06], 7)
 }
 
-function toggleFireLayer(val: boolean): void {
+function toggleFireLayer(): void {
   if (!map || !fireLayer) return
 
-  if (val) {
+  if (layerVisible.fire) {
     map.addLayer(fireLayer)
   } else {
     map.removeLayer(fireLayer)
   }
 }
 
-function toggleRiskLayer(val: boolean): void {
+function toggleRiskLayer(): void {
   if (!map || !riskLayer) return
 
-  if (val) {
+  if (layerVisible.risk) {
     map.addLayer(riskLayer)
   } else {
     map.removeLayer(riskLayer)
   }
 }
 
-function toggleResourceLayer(val: boolean): void {
+function toggleResourceLayer(): void {
   if (!map || !resourceLayer) return
 
-  if (val) {
+  if (layerVisible.resource) {
     map.addLayer(resourceLayer)
   } else {
     map.removeLayer(resourceLayer)
@@ -352,6 +351,88 @@ function toggleResourceLayer(val: boolean): void {
   border-radius: 8px;
   margin-bottom: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: #409eff;
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #337ecc;
+}
+
+.btn--warning {
+  background: #e6a23c;
+  color: #fff;
+}
+
+.btn--warning:hover {
+  background: #cf8c2e;
+}
+
+.btn--success {
+  background: #1f8f45;
+  color: #fff;
+}
+
+.btn--success:hover {
+  background: #1a7d3c;
+}
+
+.btn--danger {
+  background: #f56c6c;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #e64242;
+}
+
+.btn--default {
+  background: #fff;
+  color: #606266;
+  border: 1px solid #dcdfe6;
+}
+
+.btn--default:hover {
+  color: #1f8f45;
+  border-color: #1f8f45;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.tag--danger {
+  background: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fde2e2;
+}
+
+.tag--warning {
+  background: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #faecd8;
 }
 
 .content {
@@ -379,6 +460,55 @@ function toggleResourceLayer(val: boolean): void {
 .side-panel h3 {
   color: #1f3f2b;
   margin-top: 0;
+}
+
+.desc-list {
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.desc-row {
+  display: flex;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.desc-row:last-child {
+  border-bottom: none;
+}
+
+.desc-label {
+  width: 80px;
+  padding: 10px 12px;
+  background: #fafafa;
+  font-weight: 500;
+  color: #606266;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.desc-value {
+  flex: 1;
+  padding: 10px 12px;
+  color: #303133;
+  font-size: 13px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #303133;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+.checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #1f8f45;
 }
 
 .legend-item {

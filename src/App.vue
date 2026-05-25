@@ -1,97 +1,69 @@
 <template>
   <router-view v-if="isLoginPage" />
 
-  <el-container v-else class="layout">
-    <el-aside width="240px" class="aside">
+  <div v-else class="layout">
+    <aside class="aside">
       <div class="logo">
         <div class="logo-title">森林火灾监测预警平台</div>
         <div class="logo-subtitle">Forest Fire Warning System</div>
       </div>
 
-      <el-menu
-        router
-        :default-active="route.path"
-        background-color="#1f3f2b"
-        text-color="#dcdfe6"
-        active-text-color="#ffd04b"
-      >
-        <el-menu-item
+      <nav class="nav-menu">
+        <router-link
           v-for="item in visibleMenus"
           :key="item.path"
-          :index="item.path"
+          :to="item.path"
+          class="nav-item"
+          :class="{ active: route.path === item.path }"
         >
-          <el-icon>
-            <component :is="item.icon" />
-          </el-icon>
-          <span>{{ item.title }}</span>
-        </el-menu-item>
-      </el-menu>
-    </el-aside>
+          <span class="nav-icon">{{ item.iconText }}</span>
+          <span class="nav-text">{{ item.title }}</span>
+        </router-link>
+      </nav>
+    </aside>
 
-    <el-container>
-      <el-header class="header">
+    <div class="main-container">
+      <header class="header">
         <div class="header-left">
           {{ currentTitle }}
         </div>
 
         <div class="header-right">
-          <el-tag :type="roleTagType">
+          <span class="role-tag" :class="'role-tag--' + userInfo?.role">
             {{ userInfo?.roleName }}
-          </el-tag>
+          </span>
 
-          <el-dropdown trigger="click" @command="handleUserCommand">
-            <span class="username-dropdown">
+          <div class="dropdown" :class="{ open: dropdownOpen }">
+            <span class="username-trigger" @click="dropdownOpen = !dropdownOpen">
               {{ userInfo?.username }}
-              <el-icon class="arrow-icon">
-                <ArrowDown />
-              </el-icon>
+              <svg class="arrow-icon" viewBox="0 0 1024 1024" width="12" height="12">
+                <path d="M512 714.667c-8.533 0-17.067-2.134-23.467-8.534L147.2 364.8c-12.8-12.8-12.8-34.133 0-46.933s34.133-12.8 46.933 0L512 635.733l317.867-317.866c12.8-12.8 34.133-12.8 46.933 0s12.8 34.133 0 46.933L535.467 706.133c-6.4 6.4-14.934 8.534-23.467 8.534z" fill="currentColor"/>
+              </svg>
             </span>
 
-            <template #dropdown>
-              <el-dropdown-menu>
-                <el-dropdown-item command="profile">
-                  个人信息
-                </el-dropdown-item>
+            <div v-if="dropdownOpen" class="dropdown-menu">
+              <div class="dropdown-item" @click="goProfile">个人信息</div>
+              <div class="dropdown-item" @click="changePassword">修改密码</div>
+            </div>
+          </div>
 
-                <el-dropdown-item command="password">
-                  修改密码
-                </el-dropdown-item>
-
-              </el-dropdown-menu>
-            </template>
-          </el-dropdown>
-
-          <el-button size="small" type="danger" @click="logout">
+          <button class="btn btn--danger btn--small" @click="logout">
             退出登录
-          </el-button>
+          </button>
         </div>
+      </header>
 
-      </el-header>
-
-      <el-main class="main">
+      <main class="main">
         <router-view />
-      </el-main>
-    </el-container>
-  </el-container>
+      </main>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ElMessage } from 'element-plus'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  HomeFilled,
-  Location,
-  User,
-  Collection,
-  Warning,
-  Files,
-  Bell,
-  Picture,
-  Tickets,
-  Setting,
-  ArrowDown
-} from '@element-plus/icons-vue'
+import { Message } from './utils/message'
 import type { PermissionCode, UserInfo } from './api'
 import { useUserStore } from './stores/user'
 
@@ -99,7 +71,7 @@ import { useUserStore } from './stores/user'
 interface MenuItem {
   title: string
   path: string
-  icon: unknown
+  iconText: string
   permissions?: PermissionCode[]
 }
 
@@ -108,64 +80,66 @@ const router = useRouter()
 
 const { userInfo, clearUser } = useUserStore()
 
+const dropdownOpen = ref<boolean>(false)
+
 const menus: MenuItem[] = [
   {
     title: '系统首页',
     path: '/dashboard',
-    icon: HomeFilled
+    iconText: '🏠'
   },
   {
     title: 'GIS空间可视化',
     path: '/gis',
-    icon: Location,
+    iconText: '📍',
     permissions: ['UC07', 'UC09', 'UC12']
   },
   {
     title: '用户与权限管理',
     path: '/user-manage',
-    icon: User,
+    iconText: '👤',
     permissions: ['UC03']
   },
   {
     title: '数据分类管理',
     path: '/data-category',
-    icon: Collection,
+    iconText: '📂',
     permissions: ['UC04']
   },
   {
     title: '火点数据管理',
     path: '/fire-point',
-    icon: Warning,
+    iconText: '🔥',
     permissions: ['UC05', 'UC06', 'UC07']
   },
   {
     title: '应急资源管理',
     path: '/emergency-resource',
-    icon: Files,
+    iconText: '📦',
     permissions: ['UC08', 'UC09', 'UC10']
   },
   {
     title: '火险预警管理',
     path: '/warning',
-    icon: Bell,
+    iconText: '🔔',
     permissions: ['UC11', 'UC12']
   },
   {
     title: '遥感影像管理',
     path: '/remote-image',
-    icon: Picture,
+    iconText: '🖼',
     permissions: ['UC13', 'UC14']
   },
   {
     title: '数据申请服务',
     path: '/data-application',
-    icon: Tickets,
+    iconText: '📋',
     permissions: ['UC15', 'UC16']
   },
   {
     title: '系统运维管理',
     path: '/system-ops',
-    icon: Setting,
+    iconText: '⚙',
     permissions: ['UC17', 'UC18']
   }
 ]
@@ -192,39 +166,53 @@ const visibleMenus = computed<MenuItem[]>(() => {
   })
 })
 
-const roleTagType = computed<'success' | 'warning' | 'info' | 'danger'>(() => {
-  if (userInfo.value?.role === 'admin') return 'danger'
-  if (userInfo.value?.role === 'researcher') return 'warning'
-  return 'success'
-})
-
 function logout(): void {
   clearUser()
   router.push('/login')
 }
 
+function goProfile(): void {
+  dropdownOpen.value = false
+  router.push('/profile')
+}
 
-function handleUserCommand(command: string): void {
-  if (command === 'profile') {
-    router.push('/profile')
-  } else if (command === 'password') {
-    ElMessage.info('修改密码功能开发中')
-  } else if (command === 'logout') {
-    logout()
+function changePassword(): void {
+  dropdownOpen.value = false
+  Message.info('修改密码功能开发中')
+}
+
+function handleGlobalClick(e: MouseEvent): void {
+  const target = e.target as HTMLElement
+  if (!target.closest('.dropdown')) {
+    dropdownOpen.value = false
   }
 }
 
+import { onMounted, onUnmounted } from 'vue'
+
+onMounted(() => {
+  document.addEventListener('click', handleGlobalClick)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalClick)
+})
 </script>
 
 <style scoped>
 .layout {
   width: 100vw;
   height: 100vh;
+  display: flex;
 }
 
 .aside {
+  width: 240px;
   background: #1f3f2b;
   color: #fff;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .logo {
@@ -244,12 +232,60 @@ function handleUserCommand(command: string): void {
   color: #c0c4cc;
 }
 
+.nav-menu {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  color: #dcdfe6;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.nav-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.nav-item.active {
+  background: rgba(255, 208, 75, 0.12);
+  color: #ffd04b;
+}
+
+.nav-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+}
+
+.nav-text {
+  white-space: nowrap;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
 .header {
+  height: 60px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: #ffffff;
   border-bottom: 1px solid #ebeef5;
+  padding: 0 20px;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -264,7 +300,38 @@ function handleUserCommand(command: string): void {
   gap: 12px;
 }
 
-.username-dropdown {
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 22px;
+}
+
+.role-tag--admin {
+  background: #fef0f0;
+  color: #f56c6c;
+  border: 1px solid #fde2e2;
+}
+
+.role-tag--researcher {
+  background: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #faecd8;
+}
+
+.role-tag--user {
+  background: #f0f9eb;
+  color: #67c23a;
+  border: 1px solid #e1f3d8;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.username-trigger {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -274,19 +341,79 @@ function handleUserCommand(command: string): void {
   padding: 4px 8px;
   border-radius: 4px;
   transition: all 0.2s;
+  user-select: none;
 }
 
-.username-dropdown:hover {
+.username-trigger:hover {
   color: #1f8f45;
   background: #f0f9eb;
 }
 
 .arrow-icon {
+  transition: transform 0.2s;
+}
+
+.dropdown.open .arrow-icon {
+  transform: rotate(180deg);
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 140px;
+  z-index: 100;
+  padding: 4px 0;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #303133;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dropdown-item:hover {
+  background: #f0f9eb;
+  color: #1f8f45;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.btn--small {
+  padding: 5px 12px;
   font-size: 12px;
 }
 
+.btn--danger {
+  background: #f56c6c;
+  color: #fff;
+}
+
+.btn--danger:hover {
+  background: #e64242;
+}
 
 .main {
+  flex: 1;
   background: #f5f7fa;
   padding: 16px;
   overflow: auto;
