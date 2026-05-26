@@ -7,7 +7,6 @@ import { getCurrentUser } from '../api'
 import Profile from '../views/Profile.vue'
 import Login from '../views/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
-import GISMap from '../views/GISMap.vue'
 import UserManage from '../views/UserManage.vue'
 import DataCategory from '../views/DataCategory.vue'
 import FirePointManage from '../views/FirePointManage.vue'
@@ -51,15 +50,6 @@ const routes: RouteRecordRaw[] = [
   meta: {
     title: '个人信息',
     requiresAuth: true
-    }
-  },
-  {
-    path: '/gis',
-    component: GISMap,
-    meta: {
-      title: 'GIS空间可视化',
-      requiresAuth: true,
-      permissions: ['UC07', 'UC09', 'UC12']
     }
   },
   {

@@ -27,7 +27,6 @@
             :class="{ active: loginForm.role === item.value }"
             @click="selectRole(item.value)"
           >
-            <div class="role-icon">{{ item.iconText }}</div>
             <div class="role-name">{{ item.label }}</div>
             <div class="role-desc">{{ item.desc }}</div>
           </div>
@@ -95,7 +94,6 @@ interface RoleOption {
   label: string
   value: UserRole
   desc: string
-  iconText: string
 }
 
 interface FormErrors {
@@ -119,20 +117,17 @@ const roleOptions: RoleOption[] = [
   {
     label: '系统管理员',
     value: 'admin',
-    desc: '负责用户权限、数据审核、系统运维',
-    iconText: '🛡'
+    desc: '负责用户权限、数据审核、系统运维'
   },
   {
     label: '科研人员',
     value: 'researcher',
-    desc: '负责数据上传、查询分析和科研申请',
-    iconText: '🔬'
+    desc: '负责数据上传、查询分析和科研申请'
   },
   {
     label: '普通用户',
     value: 'user',
-    desc: '查看火点、预警、应急资源和申请数据',
-    iconText: '👤'
+    desc: '查看火点、预警、应急资源和申请数据'
   }
 ]
 
@@ -302,10 +297,6 @@ async function handleLogin(): Promise<void> {
   border-color: #1f8f45;
   background: #f0f9eb;
   box-shadow: 0 6px 16px rgba(31, 143, 69, 0.18);
-}
-
-.role-icon {
-  font-size: 30px;
 }
 
 .role-name {

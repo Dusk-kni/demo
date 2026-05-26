@@ -1,5 +1,50 @@
 <template>
-  <router-view v-if="isLoginPage" />
+  <router-view v-if="isLoginPage || isDashboardPage" />
+
+  <div v-else-if="isHorizontalNavPage" class="layout layout--horizontal">
+    <header class="top-header">
+      <div class="top-header-inner">
+        <div class="top-header-brand">
+          <span class="top-header-icon"></span>
+          <span class="top-header-title">森林火灾监测预警平台</span>
+        </div>
+        <nav class="top-nav-bar">
+          <router-link
+            v-for="item in visibleMenus"
+            :key="item.path"
+            :to="item.path"
+            class="top-nav-item"
+            :class="{ active: route.path === item.path }"
+          >
+            <span class="top-nav-text">{{ item.title }}</span>
+          </router-link>
+        </nav>
+        <div class="top-header-right">
+          <span class="role-tag" :class="'role-tag--' + userInfo?.role">
+            {{ userInfo?.roleName }}
+          </span>
+          <div class="dropdown" :class="{ open: dropdownOpen }">
+            <span class="username-trigger" @click="dropdownOpen = !dropdownOpen">
+              {{ userInfo?.username }}
+              <svg class="arrow-icon" viewBox="0 0 1024 1024" width="12" height="12">
+                <path d="M512 714.667c-8.533 0-17.067-2.134-23.467-8.534L147.2 364.8c-12.8-12.8-12.8-34.133 0-46.933s34.133-12.8 46.933 0L512 635.733l317.867-317.866c12.8-12.8 34.133-12.8 46.933 0s12.8 34.133 0 46.933L535.467 706.133c-6.4 6.4-14.934 8.534-23.467 8.534z" fill="currentColor"/>
+              </svg>
+            </span>
+            <div v-if="dropdownOpen" class="dropdown-menu">
+              <div class="dropdown-item" @click="goProfile">个人信息</div>
+              <div class="dropdown-item" @click="changePassword">修改密码</div>
+            </div>
+          </div>
+          <button class="btn btn--danger btn--small" @click="logout">
+            退出登录
+          </button>
+        </div>
+      </div>
+    </header>
+    <main class="main main--horizontal">
+      <router-view />
+    </main>
+  </div>
 
   <div v-else class="layout">
     <aside class="aside">
@@ -16,7 +61,6 @@
           class="nav-item"
           :class="{ active: route.path === item.path }"
         >
-          <span class="nav-icon">{{ item.iconText }}</span>
           <span class="nav-text">{{ item.title }}</span>
         </router-link>
       </nav>
@@ -71,7 +115,6 @@ import { useUserStore } from './stores/user'
 interface MenuItem {
   title: string
   path: string
-  iconText: string
   permissions?: PermissionCode[]
 }
 
@@ -86,65 +129,56 @@ const menus: MenuItem[] = [
   {
     title: '系统首页',
     path: '/dashboard',
-    iconText: '🏠'
-  },
-  {
-    title: 'GIS空间可视化',
-    path: '/gis',
-    iconText: '📍',
-    permissions: ['UC07', 'UC09', 'UC12']
-  },
+    },
   {
     title: '用户与权限管理',
     path: '/user-manage',
-    iconText: '👤',
     permissions: ['UC03']
   },
   {
     title: '数据分类管理',
     path: '/data-category',
-    iconText: '📂',
     permissions: ['UC04']
   },
   {
     title: '火点数据管理',
     path: '/fire-point',
-    iconText: '🔥',
     permissions: ['UC05', 'UC06', 'UC07']
   },
   {
     title: '应急资源管理',
     path: '/emergency-resource',
-    iconText: '📦',
     permissions: ['UC08', 'UC09', 'UC10']
   },
   {
     title: '火险预警管理',
     path: '/warning',
-    iconText: '🔔',
     permissions: ['UC11', 'UC12']
   },
   {
     title: '遥感影像管理',
     path: '/remote-image',
-    iconText: '🖼',
     permissions: ['UC13', 'UC14']
   },
   {
     title: '数据申请服务',
     path: '/data-application',
-    iconText: '📋',
     permissions: ['UC15', 'UC16']
   },
   {
     title: '系统运维管理',
     path: '/system-ops',
-    iconText: '⚙',
     permissions: ['UC17', 'UC18']
   }
 ]
 
 const isLoginPage = computed<boolean>(() => route.path === '/login')
+
+const isDashboardPage = computed<boolean>(() => route.path === '/dashboard')
+
+const horizontalNavPaths = ['/warning', '/remote-image', '/data-application']
+
+const isHorizontalNavPage = computed<boolean>(() => horizontalNavPaths.includes(route.path))
 
 const currentTitle = computed<string>(() => {
   return String(route.meta.title || '森林火灾监测预警平台')
@@ -206,6 +240,163 @@ onUnmounted(() => {
   display: flex;
 }
 
+.layout--horizontal {
+  flex-direction: column;
+}
+
+.top-header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: #ffffff;
+  border-bottom: 1px solid #e4e7ed;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.top-header-inner {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 20px;
+  gap: 24px;
+}
+
+.top-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.top-header-icon {
+  font-size: 22px;
+}
+
+.top-header-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #1f8f45;
+  white-space: nowrap;
+}
+
+.top-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.top-nav-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.top-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  color: #606266;
+  text-decoration: none;
+  font-size: 13px;
+  white-space: nowrap;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  cursor: pointer;
+  position: relative;
+}
+
+.top-nav-item::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: #1f8f45;
+  transition: all 0.25s ease;
+  transform: translateX(-50%);
+  border-radius: 1px;
+}
+
+.top-nav-item:hover {
+  background: rgba(31, 143, 69, 0.06);
+  color: #1f8f45;
+}
+
+.top-nav-item:hover::after {
+  width: 60%;
+}
+
+.top-nav-item.active {
+  background: rgba(31, 143, 69, 0.1);
+  color: #1f8f45;
+  font-weight: 600;
+}
+
+.top-nav-item.active::after {
+  width: 80%;
+}
+
+.top-nav-text {
+  white-space: nowrap;
+}
+
+.top-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.main--horizontal {
+  flex: 1;
+  background: #f5f7fa;
+  padding: 20px;
+  overflow: auto;
+}
+
+@media (max-width: 1024px) {
+  .top-header-inner {
+    gap: 12px;
+  }
+
+  .top-nav-item {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .top-header-title {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-header-inner {
+    flex-wrap: wrap;
+    height: auto;
+    padding: 10px 12px;
+  }
+
+  .top-header-brand {
+    width: 100%;
+  }
+
+  .top-nav-bar {
+    width: 100%;
+    order: 3;
+    padding: 4px 0;
+  }
+
+  .top-header-right {
+    margin-left: auto;
+  }
+}
+
 .aside {
   width: 240px;
   background: #1f3f2b;
@@ -258,12 +449,6 @@ onUnmounted(() => {
 .nav-item.active {
   background: rgba(255, 208, 75, 0.12);
   color: #ffd04b;
-}
-
-.nav-icon {
-  font-size: 18px;
-  width: 24px;
-  text-align: center;
 }
 
 .nav-text {
