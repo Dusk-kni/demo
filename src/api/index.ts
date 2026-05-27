@@ -32,7 +32,13 @@ export type PermissionCode =
 export interface LoginParams {
   username: string
   password: string
-  role: UserRole
+}
+
+export interface RegisterParams {
+  username: string
+  password: string
+  nickname?: string
+  email?: string
 }
 
 export interface UserInfo {
@@ -84,8 +90,8 @@ function mockRequest<T>(data: T, delay = 500): Promise<ApiResponse<T>> {
   })
 }
 
-/* 内置权限映射（保持原有权限集合） */
-const adminPermissions: PermissionCode[] = [
+/* ---------- 统一权限：所有用户拥有相同权限（移除角色权限区分） ---------- */
+const allPermissions: PermissionCode[] = [
   'UC01',
   'UC02',
   'UC03',
@@ -106,31 +112,11 @@ const adminPermissions: PermissionCode[] = [
   'UC18'
 ]
 
-const researcherPermissions: PermissionCode[] = [
-  'UC01',
-  'UC02',
-  'UC05',
-  'UC07',
-  'UC09',
-  'UC12',
-  'UC13',
-  'UC14',
-  'UC15'
-]
-
-const userPermissions: PermissionCode[] = [
-  'UC01',
-  'UC02',
-  'UC07',
-  'UC09',
-  'UC12',
-  'UC15'
-]
-
 /* ---------- 新增：用于 mock 持久化的用户类型 ---------- */
 export interface StoredUser extends UserInfo {
   password: string
   phone?: string
+  email?: string
   status?: '正常' | '已禁用'
 }
 
@@ -143,7 +129,7 @@ const defaultStoredUsers: StoredUser[] = [
     password: '123456',
     role: 'admin',
     roleName: '系统管理员',
-    permissions: adminPermissions,
+    permissions: allPermissions,
     phone: '13800000000',
     status: '正常'
   },
@@ -152,9 +138,9 @@ const defaultStoredUsers: StoredUser[] = [
     username: 'researcher',
     nickname: '科研人员',
     password: '123456',
-    role: 'researcher',
-    roleName: '科研人员',
-    permissions: researcherPermissions,
+    role: 'admin',
+    roleName: '系统管理员',
+    permissions: allPermissions,
     phone: '13800000001',
     status: '正常'
   },
@@ -163,33 +149,25 @@ const defaultStoredUsers: StoredUser[] = [
     username: 'user',
     nickname: '普通用户',
     password: '123456',
-    role: 'user',
-    roleName: '普通用户',
-    permissions: userPermissions,
+    role: 'admin',
+    roleName: '系统管理员',
+    permissions: allPermissions,
     phone: '13800000002',
     status: '正常'
   }
 ]
 
-function roleToRoleName(role: UserRole): string {
-  if (role === 'admin') return '系统管理员'
-  if (role === 'researcher') return '科研人员'
-  return '普通用户'
-}
-
-function roleToDefaultPermissions(role: UserRole): PermissionCode[] {
-  if (role === 'admin') return adminPermissions
-  if (role === 'researcher') return researcherPermissions
-  return userPermissions
-}
+const MOCK_USERS_VERSION = 2
 
 function loadStoredUsers(): StoredUser[] {
   const key = 'mockUsers'
+  const versionKey = 'mockUsersVersion'
   const str = localStorage.getItem(key)
+  const version = localStorage.getItem(versionKey)
 
-  if (!str) {
-    // 首次初始化
+  if (!str || Number(version) < MOCK_USERS_VERSION) {
     localStorage.setItem(key, JSON.stringify(defaultStoredUsers))
+    localStorage.setItem(versionKey, String(MOCK_USERS_VERSION))
     return defaultStoredUsers.slice()
   }
 
@@ -198,6 +176,7 @@ function loadStoredUsers(): StoredUser[] {
     return parsed
   } catch {
     localStorage.setItem(key, JSON.stringify(defaultStoredUsers))
+    localStorage.setItem(versionKey, String(MOCK_USERS_VERSION))
     return defaultStoredUsers.slice()
   }
 }
@@ -223,10 +202,9 @@ export function addUserApi(
   data: {
     username: string
     password: string
-    role: UserRole
     nickname?: string
     phone?: string
-    permissions?: PermissionCode[]
+    email?: string
   }
 ): Promise<ApiResponse<StoredUser | null>> {
   const users = loadStoredUsers()
@@ -240,18 +218,17 @@ export function addUserApi(
   }
 
   const id = Date.now()
-  const roleName = roleToRoleName(data.role)
-  const permissions = data.permissions ?? roleToDefaultPermissions(data.role)
 
   const newUser: StoredUser = {
     id,
     username: data.username,
     nickname: data.nickname ?? data.username,
     password: data.password,
-    role: data.role,
-    roleName,
-    permissions,
+    role: 'admin',
+    roleName: '系统管理员',
+    permissions: allPermissions,
     phone: data.phone ?? '',
+    email: data.email ?? '',
     status: '正常'
   }
 
@@ -285,12 +262,6 @@ export function updateUserApi(
     ...data
   } as StoredUser
 
-  // 如果更改了 role，但没有显式提供 roleName，则自动更新 roleName
-  if (data.role && !data.roleName) {
-    updated.roleName = roleToRoleName(data.role as UserRole)
-  }
-
-  // 如果没有传入 password，则保留原 password
   if (data.password === undefined) {
     updated.password = existing.password
   }
@@ -312,20 +283,20 @@ export function deleteUserApi(id: number): Promise<ApiResponse<null>> {
   return mockRequest<null>(null)
 }
 
-/* ---------- 登录逻辑（改成优先从 localStorage 查找用户） ---------- */
+/* ---------- 登录逻辑（仅按用户名+密码匹配，不再区分角色） ---------- */
 export function loginApi(
   data: LoginParams
 ): Promise<ApiResponse<LoginResult | null>> {
-  const { username, password, role } = data
+  const { username, password } = data
 
   const users = loadStoredUsers()
 
-  const matched = users.find(u => u.username === username && u.role === role)
+  const matched = users.find(u => u.username === username)
 
   if (!matched) {
     return Promise.resolve({
       code: 401,
-      message: '账号与所选角色不匹配或用户不存在',
+      message: '用户名不存在',
       data: null
     })
   }
@@ -355,6 +326,50 @@ export function loginApi(
       role: matched.role,
       roleName: matched.roleName,
       permissions: matched.permissions
+    }
+  })
+}
+
+/* ---------- 注册接口（mock） ---------- */
+export function registerApi(
+  data: RegisterParams
+): Promise<ApiResponse<LoginResult | null>> {
+  const users = loadStoredUsers()
+
+  if (users.some(u => u.username === data.username)) {
+    return Promise.resolve({
+      code: 400,
+      message: '用户名已存在',
+      data: null
+    })
+  }
+
+  const id = Date.now()
+
+  const newUser: StoredUser = {
+    id,
+    username: data.username,
+    nickname: data.nickname ?? data.username,
+    password: data.password,
+    role: 'admin',
+    roleName: '系统管理员',
+    permissions: allPermissions,
+    email: data.email ?? '',
+    status: '正常'
+  }
+
+  users.push(newUser)
+  saveStoredUsers(users)
+
+  return mockRequest<LoginResult>({
+    token: `mock-token-${id}`,
+    userInfo: {
+      id,
+      username: newUser.username,
+      nickname: newUser.nickname,
+      role: newUser.role,
+      roleName: newUser.roleName,
+      permissions: newUser.permissions
     }
   })
 }
@@ -407,6 +422,277 @@ export interface EmergencyResource {
   lon: number
   lat: number
   phone: string
+}
+
+/* ---------- 遥感影像管理 mock 接口 ---------- */
+
+export interface RemoteImageItem {
+  id: number
+  name: string
+  source: string
+  resolution: string
+  cloudCover: string
+  sceneCount: string
+  dataSize: string
+  views: number
+  downloads: number
+  captureTime: string
+  thumbnail: string
+  status: '可申请' | '处理中' | '已申请'
+}
+
+export interface RemoteImageStats {
+  totalScenes: string
+  totalDataSize: string
+  totalUsers: string
+  totalServices: string
+  totalDatasets: string
+  totalStorage: string
+}
+
+export interface RemoteImageListParams {
+  keyword?: string
+  source?: string
+  page: number
+  pageSize: number
+}
+
+export interface RemoteImageListResult {
+  list: RemoteImageItem[]
+  total: number
+  page: number
+  pageSize: number
+}
+
+export interface ApplyImageData {
+  imageId: number
+  purpose: string
+  email: string
+}
+
+const mockRemoteImages: RemoteImageItem[] = [
+  {
+    id: 1,
+    name: '1995年11月-2011年7月中国区域ERS-2-SAR原始遥感影像数据集',
+    source: 'ERS-2',
+    resolution: '30m',
+    cloudCover: '15%',
+    sceneCount: '20,173',
+    dataSize: '6.77TB',
+    views: 4464,
+    downloads: 174,
+    captureTime: '1995-11 ~ 2011-07',
+    thumbnail: 'https://picsum.photos/seed/rs-ers2-sar/280/180',
+    status: '可申请'
+  },
+  {
+    id: 2,
+    name: '2005-2012年中国区域IRS-P6-LISS3原始遥感影像数据集',
+    source: 'IRS-P6',
+    resolution: '23.5m',
+    cloudCover: '10%',
+    sceneCount: '7,869',
+    dataSize: '1.28TB',
+    views: 5310,
+    downloads: 23,
+    captureTime: '2005-01 ~ 2012-12',
+    thumbnail: 'https://picsum.photos/seed/rs-liss3/280/180',
+    status: '可申请'
+  },
+  {
+    id: 3,
+    name: '2005-2012年中国区域IRS-P6-AWIFS原始遥感影像数据集',
+    source: 'IRS-P6',
+    resolution: '56m',
+    cloudCover: '8%',
+    sceneCount: '2,295',
+    dataSize: '1.12TB',
+    views: 2804,
+    downloads: 22,
+    captureTime: '2005-01 ~ 2012-12',
+    thumbnail: 'https://picsum.photos/seed/rs-awifs/280/180',
+    status: '可申请'
+  },
+  {
+    id: 4,
+    name: '2005-2010年中国区域IRS-P6-LISS4原始遥感影像数据集',
+    source: 'IRS-P6',
+    resolution: '5.8m',
+    cloudCover: '12%',
+    sceneCount: '14,624',
+    dataSize: '3.58TB',
+    views: 2848,
+    downloads: 6,
+    captureTime: '2005-01 ~ 2010-12',
+    thumbnail: 'https://picsum.photos/seed/rs-liss4/280/180',
+    status: '处理中'
+  },
+  {
+    id: 5,
+    name: 'Landsat-5 TM 原始遥感影像数据集（1986-2011）',
+    source: 'Landsat-5',
+    resolution: '30m',
+    cloudCover: '5%',
+    sceneCount: '42,459',
+    dataSize: '15TB',
+    views: 12450,
+    downloads: 892,
+    captureTime: '1986-01 ~ 2011-06',
+    thumbnail: 'https://picsum.photos/seed/rs-tm/280/180',
+    status: '可申请'
+  },
+  {
+    id: 6,
+    name: 'Landsat-7 ETM+ SLC-off 原始遥感影像数据集',
+    source: 'Landsat-7',
+    resolution: '30m',
+    cloudCover: '20%',
+    sceneCount: '10,209',
+    dataSize: '20.05TB',
+    views: 8920,
+    downloads: 456,
+    captureTime: '2003-05 ~ 2024-12',
+    thumbnail: 'https://picsum.photos/seed/rs-etm/280/180',
+    status: '可申请'
+  },
+  {
+    id: 7,
+    name: 'Sentinel-2 L1C 原始遥感影像数据集',
+    source: 'Sentinel-2',
+    resolution: '10m',
+    cloudCover: '3%',
+    sceneCount: '13,412',
+    dataSize: '6.61TB',
+    views: 15230,
+    downloads: 1203,
+    captureTime: '2015-06 ~ 2026-04',
+    thumbnail: 'https://picsum.photos/seed/rs-s2l1c/280/180',
+    status: '可申请'
+  },
+  {
+    id: 8,
+    name: 'MODIS 每日地表反射率产品数据集',
+    source: 'MODIS',
+    resolution: '250m',
+    cloudCover: '-',
+    sceneCount: '暂',
+    dataSize: '暂',
+    views: 3100,
+    downloads: 78,
+    captureTime: '2000-02 ~ 2026-04',
+    thumbnail: 'https://picsum.photos/seed/rs-modis/280/180',
+    status: '处理中'
+  },
+  {
+    id: 9,
+    name: 'HJ-1A/1B CCD 多光谱遥感影像数据集',
+    source: 'HJ-1',
+    resolution: '30m',
+    cloudCover: '8%',
+    sceneCount: '35,200',
+    dataSize: '8.5TB',
+    views: 6780,
+    downloads: 345,
+    captureTime: '2008-09 ~ 2024-12',
+    thumbnail: 'https://picsum.photos/seed/rs-hj1/280/180',
+    status: '可申请'
+  },
+  {
+    id: 10,
+    name: 'GF-1 WFV 宽幅多光谱影像数据集',
+    source: 'GF-1',
+    resolution: '16m',
+    cloudCover: '6%',
+    sceneCount: '28,900',
+    dataSize: '12.3TB',
+    views: 9100,
+    downloads: 567,
+    captureTime: '2013-04 ~ 2026-03',
+    thumbnail: 'https://picsum.photos/seed/rs-gf1/280/180',
+    status: '可申请'
+  },
+  {
+    id: 11,
+    name: 'GF-2 PMS 高分辨率多光谱影像数据集',
+    source: 'GF-2',
+    resolution: '4m',
+    cloudCover: '4%',
+    sceneCount: '18,600',
+    dataSize: '25.8TB',
+    views: 11200,
+    downloads: 890,
+    captureTime: '2014-08 ~ 2026-04',
+    thumbnail: 'https://picsum.photos/seed/rs-gf2/280/180',
+    status: '已申请'
+  },
+  {
+    id: 12,
+    name: 'ZY-3 三线阵立体测绘影像数据集',
+    source: 'ZY-3',
+    resolution: '2.1m',
+    cloudCover: '7%',
+    sceneCount: '9,800',
+    dataSize: '18.6TB',
+    views: 5600,
+    downloads: 234,
+    captureTime: '2012-01 ~ 2025-12',
+    thumbnail: 'https://picsum.photos/seed/rs-zy3/280/180',
+    status: '可申请'
+  }
+]
+
+export function getRemoteImageStatsApi(): Promise<ApiResponse<RemoteImageStats>> {
+  return mockRequest<RemoteImageStats>({
+    totalScenes: '640,226',
+    totalDataSize: '807.41TB',
+    totalUsers: '77,403人',
+    totalServices: '84,221',
+    totalDatasets: '16',
+    totalStorage: '30.15PB'
+  })
+}
+
+export function getRemoteImagesApi(
+  params: RemoteImageListParams
+): Promise<ApiResponse<RemoteImageListResult>> {
+  let filtered = mockRemoteImages.slice()
+
+  if (params.keyword) {
+    const kw = params.keyword.toLowerCase()
+    filtered = filtered.filter(item => item.name.toLowerCase().includes(kw) || item.source.toLowerCase().includes(kw))
+  }
+
+  if (params.source) {
+    filtered = filtered.filter(item => item.source === params.source)
+  }
+
+  const total = filtered.length
+  const start = (params.page - 1) * params.pageSize
+  const list = filtered.slice(start, start + params.pageSize)
+
+  return mockRequest<RemoteImageListResult>({
+    list,
+    total,
+    page: params.page,
+    pageSize: params.pageSize
+  })
+}
+
+export function getRemoteImageDetailApi(
+  id: number
+): Promise<ApiResponse<RemoteImageItem | null>> {
+  const item = mockRemoteImages.find(i => i.id === id)
+  return mockRequest<RemoteImageItem | null>(item ?? null)
+}
+
+export function applyRemoteImageApi(
+  data: ApplyImageData
+): Promise<ApiResponse<{ applyId: number }>> {
+  const target = mockRemoteImages.find(i => i.id === data.imageId)
+  if (target) {
+    target.status = '已申请'
+  }
+  return mockRequest<{ applyId: number }>({ applyId: Date.now() })
 }
 
 /**

@@ -78,17 +78,6 @@
             <div v-if="formErrors.password" class="form-error">{{ formErrors.password }}</div>
           </div>
 
-          <div class="form-item" :class="{ 'has-error': formErrors.role }">
-            <label class="form-label">角色</label>
-            <select v-model="form.role" class="form-select" @change="validateForm('role')">
-              <option value="">请选择角色</option>
-              <option value="admin">系统管理员</option>
-              <option value="researcher">科研人员</option>
-              <option value="user">普通用户</option>
-            </select>
-            <div v-if="formErrors.role" class="form-error">{{ formErrors.role }}</div>
-          </div>
-
           <div class="form-item">
             <label class="form-label">昵称</label>
             <input v-model="form.nickname" class="form-input" />
@@ -97,6 +86,11 @@
           <div class="form-item">
             <label class="form-label">联系电话</label>
             <input v-model="form.phone" class="form-input" />
+          </div>
+
+          <div class="form-item">
+            <label class="form-label">邮箱</label>
+            <input v-model="form.email" class="form-input" placeholder="请输入邮箱" />
           </div>
         </div>
 
@@ -152,7 +146,7 @@ import {
   updateUserApi,
   deleteUserApi
 } from '../api'
-import type { StoredUser, PermissionCode, UserRole } from '../api'
+import type { StoredUser, PermissionCode } from '../api'
 
 const users = ref<StoredUser[]>([])
 
@@ -163,24 +157,23 @@ interface FormState {
   id?: number
   username: string
   password?: string
-  role?: UserRole
   nickname?: string
   phone?: string
+  email?: string
 }
 
 interface FormErrorState {
   username?: string
   password?: string
-  role?: string
 }
 
 const form = reactive<FormState>({
   id: undefined,
   username: '',
   password: '',
-  role: 'user',
   nickname: '',
-  phone: ''
+  phone: '',
+  email: ''
 })
 
 const formErrors = reactive<FormErrorState>({})
@@ -232,12 +225,11 @@ function openAdd() {
   form.id = undefined
   form.username = ''
   form.password = ''
-  form.role = 'user'
   form.nickname = ''
   form.phone = ''
+  form.email = ''
   formErrors.username = undefined
   formErrors.password = undefined
-  formErrors.role = undefined
   userDialogVisible.value = true
 }
 
@@ -245,12 +237,11 @@ function openEdit(row: StoredUser) {
   form.id = row.id
   form.username = row.username
   form.password = ''
-  form.role = row.role
   form.nickname = row.nickname
   form.phone = row.phone
+  form.email = row.email ?? ''
   formErrors.username = undefined
   formErrors.password = undefined
-  formErrors.role = undefined
   userDialogVisible.value = true
 }
 
@@ -271,22 +262,13 @@ function validateForm(field: keyof FormErrorState): boolean {
     formErrors.password = undefined
   }
 
-  if (field === 'role') {
-    if (!form.role) {
-      formErrors.role = '请选择角色'
-      return false
-    }
-    formErrors.role = undefined
-  }
-
   return true
 }
 
 function validateAllForm(): boolean {
   const u = validateForm('username')
   const p = validateForm('password')
-  const r = validateForm('role')
-  return u && p && r
+  return u && p
 }
 
 async function saveUser() {
@@ -297,7 +279,7 @@ async function saveUser() {
       id: form.id,
       nickname: form.nickname,
       phone: form.phone,
-      role: form.role
+      email: form.email
     }
     if (form.password) {
       payload.password = form.password
@@ -320,9 +302,9 @@ async function saveUser() {
     const res = await addUserApi({
       username: form.username,
       password: form.password!,
-      role: form.role!,
       nickname: form.nickname,
-      phone: form.phone
+      phone: form.phone,
+      email: form.email
     })
 
     if (res.code === 200 && res.data) {

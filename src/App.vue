@@ -1,5 +1,5 @@
 <template>
-  <router-view v-if="isLoginPage || isDashboardPage" />
+  <router-view v-if="isLoginPage || isDashboardPage || isRegisterPage" />
 
   <div v-else-if="isHorizontalNavPage" class="layout layout--horizontal">
     <header class="top-header">
@@ -175,6 +175,8 @@ const menus: MenuItem[] = [
 const isLoginPage = computed<boolean>(() => route.path === '/login')
 
 const isDashboardPage = computed<boolean>(() => route.path === '/dashboard')
+
+const isRegisterPage = computed<boolean>(() => route.path === '/register')
 
 const horizontalNavPaths = ['/warning', '/remote-image', '/data-application']
 

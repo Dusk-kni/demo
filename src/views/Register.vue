@@ -1,6 +1,6 @@
 <template>
-  <div class="login-page">
-    <div class="login-container">
+  <div class="register-page">
+    <div class="register-container">
       <div class="left-panel">
         <div class="platform-title">森林火灾监测预警平台</div>
         <div class="platform-subtitle">
@@ -15,15 +15,15 @@
         </div>
       </div>
 
-      <div class="login-box">
-        <div class="login-title">用户登录</div>
-        <div class="login-desc">请输入账号密码登录系统</div>
+      <div class="register-box">
+        <div class="register-title">用户注册</div>
+        <div class="register-desc">创建账号以使用系统功能</div>
 
-        <form class="login-form" @submit.prevent="handleLogin">
+        <form class="register-form" @submit.prevent="handleRegister">
           <div class="form-item" :class="{ 'has-error': errors.username }">
-            <label class="form-label">用户名</label>
+            <label class="form-label">用户名 <span class="required">*</span></label>
             <input
-              v-model="loginForm.username"
+              v-model="form.username"
               type="text"
               class="form-input"
               placeholder="请输入用户名"
@@ -32,14 +32,36 @@
             <div v-if="errors.username" class="form-error">{{ errors.username }}</div>
           </div>
 
+          <div class="form-item">
+            <label class="form-label">昵称</label>
+            <input
+              v-model="form.nickname"
+              type="text"
+              class="form-input"
+              placeholder="请输入昵称（可选）"
+            />
+          </div>
+
+          <div class="form-item" :class="{ 'has-error': errors.email }">
+            <label class="form-label">邮箱 <span class="required">*</span></label>
+            <input
+              v-model="form.email"
+              type="email"
+              class="form-input"
+              placeholder="请输入邮箱地址"
+              @blur="validateField('email')"
+            />
+            <div v-if="errors.email" class="form-error">{{ errors.email }}</div>
+          </div>
+
           <div class="form-item" :class="{ 'has-error': errors.password }">
-            <label class="form-label">密码</label>
+            <label class="form-label">密码 <span class="required">*</span></label>
             <div class="input-wrapper">
               <input
-                v-model="loginForm.password"
+                v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 class="form-input"
-                placeholder="请输入密码"
+                placeholder="请输入密码（至少6位）"
                 @blur="validateField('password')"
               />
               <button type="button" class="toggle-password" @click="showPassword = !showPassword">
@@ -49,24 +71,35 @@
             <div v-if="errors.password" class="form-error">{{ errors.password }}</div>
           </div>
 
+          <div class="form-item" :class="{ 'has-error': errors.confirmPassword }">
+            <label class="form-label">确认密码 <span class="required">*</span></label>
+            <div class="input-wrapper">
+              <input
+                v-model="form.confirmPassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                class="form-input"
+                placeholder="请再次输入密码"
+                @blur="validateField('confirmPassword')"
+              />
+              <button type="button" class="toggle-password" @click="showConfirmPassword = !showConfirmPassword">
+                {{ showConfirmPassword ? '隐藏' : '显示' }}
+              </button>
+            </div>
+            <div v-if="errors.confirmPassword" class="form-error">{{ errors.confirmPassword }}</div>
+          </div>
+
           <button
             type="submit"
-            class="btn btn--success btn--large login-button"
-            :disabled="loading"
+            class="btn btn--success btn--large register-button"
+            :disabled="submitting"
           >
-            {{ loading ? '登录中...' : '登录系统' }}
+            {{ submitting ? '注册中...' : '立即注册' }}
           </button>
         </form>
 
-        <div class="login-links">
-          <router-link to="/register" class="link-text">注册账号</router-link>
-        </div>
-
-        <div class="account-tip">
-          <div>测试账号：</div>
-          <div>系统管理员：admin / 123456</div>
-          <div>科研人员：researcher / 123456</div>
-          <div>普通用户：user / 123456</div>
+        <div class="register-links">
+          <span class="link-label">已有账号？</span>
+          <router-link to="/login" class="link-text">返回登录</router-link>
         </div>
       </div>
     </div>
@@ -74,46 +107,87 @@
 </template>
 
 <script setup lang="ts">
-import { useUserStore } from '../stores/user'
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message } from '../utils/message'
-import { loginApi } from '../api'
-import type { LoginParams } from '../api'
+import { registerApi } from '../api'
+import type { RegisterParams } from '../api'
 
 interface FormErrors {
   username?: string
+  email?: string
   password?: string
+  confirmPassword?: string
 }
 
 const router = useRouter()
-const loading = ref<boolean>(false)
+const submitting = ref<boolean>(false)
 const showPassword = ref<boolean>(false)
+const showConfirmPassword = ref<boolean>(false)
 
-const loginForm = reactive<LoginParams>({
-  username: 'admin',
-  password: '123456'
+const form = reactive({
+  username: '',
+  nickname: '',
+  email: '',
+  password: '',
+  confirmPassword: ''
 })
 
 const errors = reactive<FormErrors>({})
 
-const { setUser } = useUserStore()
-
 function validateField(field: keyof FormErrors): boolean {
   if (field === 'username') {
-    if (!loginForm.username.trim()) {
+    if (!form.username.trim()) {
       errors.username = '请输入用户名'
+      return false
+    }
+    if (form.username.trim().length < 2) {
+      errors.username = '用户名至少2个字符'
       return false
     }
     errors.username = undefined
   }
 
+  if (field === 'email') {
+    if (!form.email.trim()) {
+      errors.email = '请输入邮箱地址'
+      return false
+    }
+    const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailReg.test(form.email)) {
+      errors.email = '请输入有效的邮箱地址'
+      return false
+    }
+    errors.email = undefined
+  }
+
   if (field === 'password') {
-    if (!loginForm.password.trim()) {
+    if (!form.password) {
       errors.password = '请输入密码'
       return false
     }
+    if (form.password.length < 6) {
+      errors.password = '密码至少6位'
+      return false
+    }
     errors.password = undefined
+    if (form.confirmPassword && form.password !== form.confirmPassword) {
+      errors.confirmPassword = '两次输入的密码不一致'
+    } else if (form.confirmPassword) {
+      errors.confirmPassword = undefined
+    }
+  }
+
+  if (field === 'confirmPassword') {
+    if (!form.confirmPassword) {
+      errors.confirmPassword = '请再次输入密码'
+      return false
+    }
+    if (form.password !== form.confirmPassword) {
+      errors.confirmPassword = '两次输入的密码不一致'
+      return false
+    }
+    errors.confirmPassword = undefined
   }
 
   return true
@@ -121,35 +195,43 @@ function validateField(field: keyof FormErrors): boolean {
 
 function validateAll(): boolean {
   const u = validateField('username')
+  const e = validateField('email')
   const p = validateField('password')
-  return u && p
+  const c = validateField('confirmPassword')
+  return u && e && p && c
 }
 
-async function handleLogin(): Promise<void> {
+async function handleRegister(): Promise<void> {
   if (!validateAll()) return
 
-  loading.value = true
+  submitting.value = true
 
-  const res = await loginApi({
-    username: loginForm.username,
-    password: loginForm.password
-  })
+  try {
+    const params: RegisterParams = {
+      username: form.username.trim(),
+      password: form.password,
+      nickname: form.nickname.trim() || undefined,
+      email: form.email.trim()
+    }
 
-  loading.value = false
+    const res = await registerApi(params)
 
-  if (res.code === 200 && res.data) {
-    localStorage.setItem('token', res.data.token)
-    setUser(res.data.userInfo)
-    Message.success('登录成功')
-    router.push('/dashboard')
-  } else {
-    Message.error(res.message || '登录失败')
+    if (res.code === 200 && res.data) {
+      Message.success('注册成功，请登录')
+      router.push('/login')
+    } else {
+      Message.error(res.message || '注册失败')
+    }
+  } catch {
+    Message.error('网络异常，请稍后重试')
+  } finally {
+    submitting.value = false
   }
 }
 </script>
 
 <style scoped>
-.login-page {
+.register-page {
   width: 100vw;
   height: 100vh;
   background:
@@ -162,7 +244,7 @@ async function handleLogin(): Promise<void> {
   justify-content: center;
 }
 
-.login-container {
+.register-container {
   width: 1080px;
   min-height: 640px;
   display: flex;
@@ -202,31 +284,32 @@ async function handleLogin(): Promise<void> {
   letter-spacing: 1px;
 }
 
-.login-box {
+.register-box {
   flex: 1;
   background: rgba(255, 255, 255, 0.97);
-  padding: 42px 46px;
+  padding: 36px 46px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
-.login-title {
+.register-title {
   font-size: 28px;
   font-weight: bold;
   color: #1f3f2b;
 }
 
-.login-desc {
+.register-desc {
   margin-top: 8px;
   color: #909399;
 }
 
-.login-form {
-  margin-top: 36px;
+.register-form {
+  margin-top: 24px;
 }
 
 .form-item {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .form-label {
@@ -235,6 +318,10 @@ async function handleLogin(): Promise<void> {
   font-weight: 500;
   color: #303133;
   margin-bottom: 6px;
+}
+
+.required {
+  color: #f56c6c;
 }
 
 .form-input {
@@ -326,14 +413,19 @@ async function handleLogin(): Promise<void> {
   cursor: not-allowed;
 }
 
-.login-button {
+.register-button {
   width: 100%;
   margin-top: 8px;
 }
 
-.login-links {
+.register-links {
   margin-top: 16px;
-  text-align: right;
+  text-align: center;
+}
+
+.link-label {
+  color: #909399;
+  font-size: 14px;
 }
 
 .link-text {
@@ -349,25 +441,15 @@ async function handleLogin(): Promise<void> {
   text-decoration: underline;
 }
 
-.account-tip {
-  margin-top: auto;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-  color: #606266;
-  font-size: 13px;
-  line-height: 1.7;
-}
-
 @media (max-width: 1100px) {
-  .login-container {
+  .register-container {
     width: 92%;
     max-width: 1080px;
   }
 }
 
 @media (max-width: 768px) {
-  .login-container {
+  .register-container {
     flex-direction: column;
     width: 94%;
     min-height: auto;
@@ -387,7 +469,7 @@ async function handleLogin(): Promise<void> {
     font-size: 14px;
   }
 
-  .login-box {
+  .register-box {
     padding: 28px 24px;
   }
 }

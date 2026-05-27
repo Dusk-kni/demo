@@ -6,6 +6,7 @@ import { getCurrentUser } from '../api'
 
 import Profile from '../views/Profile.vue'
 import Login from '../views/Login.vue'
+import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
 import UserManage from '../views/UserManage.vue'
 import DataCategory from '../views/DataCategory.vue'
@@ -34,6 +35,13 @@ const routes: RouteRecordRaw[] = [
     component: Login,
     meta: {
       title: '登录'
+    }
+  },
+  {
+    path: '/register',
+    component: Register,
+    meta: {
+      title: '注册'
     }
   },
   {

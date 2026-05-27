@@ -17,11 +17,6 @@
         </div>
 
         <div class="desc-row">
-          <div class="desc-label">角色编码</div>
-          <div class="desc-value">{{ userInfo?.role }}</div>
-        </div>
-
-        <div class="desc-row">
           <div class="desc-label">权限数量</div>
           <div class="desc-value">{{ userInfo?.permissions.length }}</div>
         </div>
