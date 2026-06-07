@@ -3,8 +3,8 @@
     <div class="page-title">火点数据管理</div>
 
     <div class="card" style="display:flex; gap:8px;">
-      <button v-if="canUpload" class="btn btn--primary">火点数据上传</button>
-      <button v-if="canAudit" class="btn btn--warning">火点数据审核</button>
+      <button class="btn btn--primary">火点数据上传</button>
+      <button class="btn btn--warning">火点数据审核</button>
       <button class="btn btn--success">火点数据查询</button>
     </div>
 
@@ -40,14 +40,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useUserStore } from '../stores/user'
-
-const { hasPermission } = useUserStore()
-
-const canUpload = computed<boolean>(() => hasPermission('UC05'))
-const canAudit = computed<boolean>(() => hasPermission('UC06'))
-
 const tableData = [
   {
     name: '火点001',

@@ -18,7 +18,6 @@
       <div class="nav-right">
         <span class="nav-time">{{ currentTime }}</span>
         <div class="nav-user">
-          <span class="nav-role">{{ currentUser?.roleName }}</span>
           <span class="nav-username">{{ currentUser?.username }}</span>
           <button class="nav-logout-btn" @click="handleLogout">退出</button>
         </div>
@@ -719,18 +718,6 @@ function initWarningDistChart(): void {
   align-items: center;
   gap: 8px;
   white-space: nowrap;
-}
-
-.nav-role {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 4px;
-  font-size: 13px;
-  line-height: 20px;
-  background: #f0f9eb;
-  color: #67c23a;
-  border: 1px solid #e1f3d8;
 }
 
 .nav-username {

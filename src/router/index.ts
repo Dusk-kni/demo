@@ -1,8 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import { Message } from '../utils/message'
-import type { PermissionCode } from '../api'
-import { getCurrentUser } from '../api'
 
 import Profile from '../views/Profile.vue'
 import Login from '../views/Login.vue'
@@ -14,6 +11,7 @@ import FirePointManage from '../views/FirePointManage.vue'
 import EmergencyResource from '../views/EmergencyResource.vue'
 import WarningManage from '../views/WarningManage.vue'
 import RemoteImageManage from '../views/RemoteImageManage.vue'
+import NdviViewer from '../views/NdviViewer.vue'
 import DataApplication from '../views/DataApplication.vue'
 import SystemOps from '../views/SystemOps.vue'
 
@@ -21,7 +19,6 @@ declare module 'vue-router' {
   interface RouteMeta {
     title?: string
     requiresAuth?: boolean
-    permissions?: PermissionCode[]
   }
 }
 
@@ -53,11 +50,11 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-  path: '/profile',
-  component: Profile,
-  meta: {
-    title: '个人信息',
-    requiresAuth: true
+    path: '/profile',
+    component: Profile,
+    meta: {
+      title: '个人信息',
+      requiresAuth: true
     }
   },
   {
@@ -65,8 +62,7 @@ const routes: RouteRecordRaw[] = [
     component: UserManage,
     meta: {
       title: '用户与权限管理',
-      requiresAuth: true,
-      permissions: ['UC03']
+      requiresAuth: true
     }
   },
   {
@@ -74,8 +70,7 @@ const routes: RouteRecordRaw[] = [
     component: DataCategory,
     meta: {
       title: '数据分类管理',
-      requiresAuth: true,
-      permissions: ['UC04']
+      requiresAuth: true
     }
   },
   {
@@ -83,8 +78,7 @@ const routes: RouteRecordRaw[] = [
     component: FirePointManage,
     meta: {
       title: '火点数据管理',
-      requiresAuth: true,
-      permissions: ['UC05', 'UC06', 'UC07']
+      requiresAuth: true
     }
   },
   {
@@ -92,8 +86,7 @@ const routes: RouteRecordRaw[] = [
     component: EmergencyResource,
     meta: {
       title: '应急资源管理',
-      requiresAuth: true,
-      permissions: ['UC08', 'UC09', 'UC10']
+      requiresAuth: true
     }
   },
   {
@@ -101,8 +94,7 @@ const routes: RouteRecordRaw[] = [
     component: WarningManage,
     meta: {
       title: '火险预警管理',
-      requiresAuth: true,
-      permissions: ['UC11', 'UC12']
+      requiresAuth: true
     }
   },
   {
@@ -110,8 +102,15 @@ const routes: RouteRecordRaw[] = [
     component: RemoteImageManage,
     meta: {
       title: '遥感影像管理',
-      requiresAuth: true,
-      permissions: ['UC13', 'UC14']
+      requiresAuth: true
+    }
+  },
+  {
+    path: '/ndvi-viewer',
+    component: NdviViewer,
+    meta: {
+      title: '遥感影像上传',
+      requiresAuth: true
     }
   },
   {
@@ -119,8 +118,7 @@ const routes: RouteRecordRaw[] = [
     component: DataApplication,
     meta: {
       title: '数据申请服务',
-      requiresAuth: true,
-      permissions: ['UC15', 'UC16']
+      requiresAuth: true
     }
   },
   {
@@ -128,8 +126,7 @@ const routes: RouteRecordRaw[] = [
     component: SystemOps,
     meta: {
       title: '系统运维管理',
-      requiresAuth: true,
-      permissions: ['UC17', 'UC18']
+      requiresAuth: true
     }
   }
 ]
@@ -141,28 +138,10 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
-  const userInfo = getCurrentUser()
 
   if (to.meta.requiresAuth && !token) {
     next('/login')
     return
-  }
-
-  if (to.meta.permissions && to.meta.permissions.length > 0) {
-    if (!userInfo) {
-      next('/login')
-      return
-    }
-
-    const hasAuth = to.meta.permissions.some(permission =>
-      userInfo.permissions.includes(permission)
-    )
-
-    if (!hasAuth) {
-      Message.warning('当前角色无权访问该功能模块')
-      next('/dashboard')
-      return
-    }
   }
 
   next()

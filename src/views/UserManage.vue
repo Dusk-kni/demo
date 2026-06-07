@@ -12,16 +12,16 @@
         <thead>
           <tr>
             <th>用户名</th>
-            <th>角色</th>
+            <th>昵称</th>
             <th>联系电话</th>
             <th>状态</th>
-            <th style="width:360px">操作</th>
+            <th style="width:280px">操作</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="row in users" :key="row.id">
             <td>{{ row.username }}</td>
-            <td>{{ row.roleName }}</td>
+            <td>{{ row.nickname }}</td>
             <td>{{ row.phone }}</td>
             <td>
               <span class="tag" :class="row.status === '正常' ? 'tag--success' : 'tag--danger'">
@@ -31,7 +31,6 @@
             <td>
               <div class="action-group">
                 <button class="btn btn--primary btn--small" @click="openEdit(row)">编辑</button>
-                <button class="btn btn--warning btn--small" @click="openAssignPerms(row)">分配权限</button>
                 <button
                   class="btn btn--small"
                   :class="row.status === '正常' ? 'btn--danger' : 'btn--success'"
@@ -101,39 +100,6 @@
       </div>
     </div>
 
-    <div v-if="permDialogVisible" class="modal-overlay" @click.self="permDialogVisible = false">
-      <div class="modal" style="width:560px">
-        <div class="modal-header">
-          <h3>分配权限</h3>
-          <button class="modal-close" @click="permDialogVisible = false">&times;</button>
-        </div>
-
-        <div class="modal-body">
-          <div style="margin-bottom:12px">为用户 <strong>{{ currentAssignUsername }}</strong> 分配权限：</div>
-
-          <div class="perm-grid">
-            <label
-              v-for="p in allPermissions"
-              :key="p.code"
-              class="checkbox-item"
-            >
-              <input
-                type="checkbox"
-                :value="p.code"
-                :checked="selectedPerms.includes(p.code)"
-                @change="togglePerm(p.code)"
-              />
-              <span>{{ p.label }}</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button class="btn btn--default" @click="permDialogVisible = false">取消</button>
-          <button class="btn btn--primary" @click="savePerms">保存权限</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -146,12 +112,11 @@ import {
   updateUserApi,
   deleteUserApi
 } from '../api'
-import type { StoredUser, PermissionCode } from '../api'
+import type { StoredUser } from '../api'
 
 const users = ref<StoredUser[]>([])
 
 const userDialogVisible = ref(false)
-const permDialogVisible = ref(false)
 
 interface FormState {
   id?: number
@@ -177,31 +142,6 @@ const form = reactive<FormState>({
 })
 
 const formErrors = reactive<FormErrorState>({})
-
-const allPermissions: { code: PermissionCode; label: string }[] = [
-  { code: 'UC01', label: '基础数据查看 (UC01)' },
-  { code: 'UC02', label: '统计视图 (UC02)' },
-  { code: 'UC03', label: '用户与权限管理 (UC03)' },
-  { code: 'UC04', label: '数据分类管理 (UC04)' },
-  { code: 'UC05', label: '火点上传 (UC05)' },
-  { code: 'UC06', label: '火点审核 (UC06)' },
-  { code: 'UC07', label: '火点查看 / GIS (UC07)' },
-  { code: 'UC08', label: '应急资源上传 (UC08)' },
-  { code: 'UC09', label: '应急资源查看 / GIS (UC09)' },
-  { code: 'UC10', label: '资源调度 (UC10)' },
-  { code: 'UC11', label: '预警发布 (UC11)' },
-  { code: 'UC12', label: '火险展示 (UC12)' },
-  { code: 'UC13', label: '遥感影像上传 (UC13)' },
-  { code: 'UC14', label: '遥感影像管理 (UC14)' },
-  { code: 'UC15', label: '数据申请 (UC15)' },
-  { code: 'UC16', label: '申请管理 (UC16)' },
-  { code: 'UC17', label: '系统运维 (UC17)' },
-  { code: 'UC18', label: '备份恢复 (UC18)' }
-]
-
-const selectedPerms = ref<PermissionCode[]>([])
-const currentAssignUserId = ref<number | null>(null)
-const currentAssignUsername = ref<string>('')
 
 async function loadUsers() {
   const res = await getUsersApi()
@@ -341,39 +281,6 @@ async function deleteUser(id: number) {
     loadUsers()
   } else {
     Message.error(res.message || '删除失败')
-  }
-}
-
-function openAssignPerms(row: StoredUser) {
-  currentAssignUserId.value = row.id
-  currentAssignUsername.value = row.username
-  selectedPerms.value = Array.isArray(row.permissions) ? [...row.permissions] : []
-  permDialogVisible.value = true
-}
-
-function togglePerm(code: PermissionCode) {
-  const idx = selectedPerms.value.indexOf(code)
-  if (idx === -1) {
-    selectedPerms.value.push(code)
-  } else {
-    selectedPerms.value.splice(idx, 1)
-  }
-}
-
-async function savePerms() {
-  if (!currentAssignUserId.value) return
-
-  const res = await updateUserApi({
-    id: currentAssignUserId.value,
-    permissions: selectedPerms.value
-  })
-
-  if (res.code === 200) {
-    Message.success('权限保存成功')
-    permDialogVisible.value = false
-    loadUsers()
-  } else {
-    Message.error(res.message || '保存权限失败')
   }
 }
 </script>
@@ -622,26 +529,4 @@ async function savePerms() {
   margin-top: 4px;
 }
 
-.perm-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.checkbox-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #303133;
-  cursor: pointer;
-  padding: 4px 0;
-}
-
-.checkbox-item input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-  accent-color: #1f8f45;
-}
 </style>

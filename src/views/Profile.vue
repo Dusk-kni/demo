@@ -12,26 +12,8 @@
         </div>
 
         <div class="desc-row">
-          <div class="desc-label">用户角色</div>
-          <div class="desc-value">{{ userInfo?.roleName }}</div>
-        </div>
-
-        <div class="desc-row">
-          <div class="desc-label">权限数量</div>
-          <div class="desc-value">{{ userInfo?.permissions.length }}</div>
-        </div>
-
-        <div class="desc-row">
-          <div class="desc-label">权限列表</div>
-          <div class="desc-value">
-            <span
-              v-for="item in userInfo?.permissions"
-              :key="item"
-              class="tag"
-            >
-              {{ item }}
-            </span>
-          </div>
+          <div class="desc-label">昵称</div>
+          <div class="desc-value">{{ userInfo?.nickname }}</div>
         </div>
       </div>
     </div>
@@ -86,17 +68,5 @@ const userInfo = computed(() => getCurrentUser())
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-}
-
-.tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  background: #f0f9eb;
-  color: #67c23a;
-  border: 1px solid #e1f3d8;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 20px;
 }
 </style>

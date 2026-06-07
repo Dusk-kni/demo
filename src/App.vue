@@ -9,20 +9,45 @@
           <span class="top-header-title">森林火灾监测预警平台</span>
         </div>
         <nav class="top-nav-bar">
-          <router-link
-            v-for="item in visibleMenus"
-            :key="item.path"
-            :to="item.path"
-            class="top-nav-item"
-            :class="{ active: route.path === item.path }"
-          >
-            <span class="top-nav-text">{{ item.title }}</span>
-          </router-link>
+          <template v-for="item in visibleMenus" :key="item.path">
+            <div
+              v-if="item.children && item.children.length > 0"
+              class="top-nav-item top-nav-submenu"
+              :class="{ active: isMenuActive(item), 'submenu-open': topSubMenu === item.path }"
+              @mouseenter="openTopSubMenu(item.path, $event)"
+              @mouseleave="closeTopSubMenu"
+            >
+              <span class="top-nav-text">{{ item.title }}</span>
+              <svg class="submenu-arrow" viewBox="0 0 1024 1024" width="10" height="10"><path d="M512 714.667c-8.533 0-17.067-2.134-23.467-8.534L147.2 364.8c-12.8-12.8-12.8-34.133 0-46.933s34.133-12.8 46.933 0L512 635.733l317.867-317.866c12.8-12.8 34.133-12.8 46.933 0s12.8 34.133 0 46.933L535.467 706.133c-6.4 6.4-14.934 8.534-23.467 8.534z" fill="currentColor"/></svg>
+            </div>
+            <router-link
+              v-else
+              :to="item.path"
+              class="top-nav-item"
+              :class="{ active: route.path === item.path }"
+            >
+              <span class="top-nav-text">{{ item.title }}</span>
+            </router-link>
+          </template>
         </nav>
+        <div
+          v-if="topSubMenu && activeTopMenuChildren.length > 0"
+          class="submenu-dropdown-fixed"
+          :style="subMenuStyle"
+          @mouseenter="keepTopSubMenu"
+          @mouseleave="closeTopSubMenu"
+        >
+          <router-link
+            v-for="child in activeTopMenuChildren"
+            :key="child.path"
+            :to="child.path"
+            class="submenu-item"
+            :class="{ active: route.path === child.path }"
+          >
+            {{ child.title }}
+          </router-link>
+        </div>
         <div class="top-header-right">
-          <span class="role-tag" :class="'role-tag--' + userInfo?.role">
-            {{ userInfo?.roleName }}
-          </span>
           <div class="dropdown" :class="{ open: dropdownOpen }">
             <span class="username-trigger" @click="dropdownOpen = !dropdownOpen">
               {{ userInfo?.username }}
@@ -54,15 +79,37 @@
       </div>
 
       <nav class="nav-menu">
-        <router-link
-          v-for="item in visibleMenus"
-          :key="item.path"
-          :to="item.path"
-          class="nav-item"
-          :class="{ active: route.path === item.path }"
-        >
-          <span class="nav-text">{{ item.title }}</span>
-        </router-link>
+        <template v-for="item in visibleMenus" :key="item.path">
+          <div v-if="item.children && item.children.length > 0" class="nav-group">
+            <div
+              class="nav-item"
+              :class="{ active: isMenuActive(item) }"
+              @click="toggleSideSubMenu(item.path)"
+            >
+              <span class="nav-text">{{ item.title }}</span>
+              <svg class="nav-arrow" :class="{ open: sideSubMenu === item.path }" viewBox="0 0 1024 1024" width="12" height="12"><path d="M512 714.667c-8.533 0-17.067-2.134-23.467-8.534L147.2 364.8c-12.8-12.8-12.8-34.133 0-46.933s34.133-12.8 46.933 0L512 635.733l317.867-317.866c12.8-12.8 34.133-12.8 46.933 0s12.8 34.133 0 46.933L535.467 706.133c-6.4 6.4-14.934 8.534-23.467 8.534z" fill="currentColor"/></svg>
+            </div>
+            <div v-show="sideSubMenu === item.path" class="nav-sub-list">
+              <router-link
+                v-for="child in item.children"
+                :key="child.path"
+                :to="child.path"
+                class="nav-sub-item"
+                :class="{ active: route.path === child.path }"
+              >
+                {{ child.title }}
+              </router-link>
+            </div>
+          </div>
+          <router-link
+            v-else
+            :to="item.path"
+            class="nav-item"
+            :class="{ active: route.path === item.path }"
+          >
+            <span class="nav-text">{{ item.title }}</span>
+          </router-link>
+        </template>
       </nav>
     </aside>
 
@@ -73,10 +120,6 @@
         </div>
 
         <div class="header-right">
-          <span class="role-tag" :class="'role-tag--' + userInfo?.role">
-            {{ userInfo?.roleName }}
-          </span>
-
           <div class="dropdown" :class="{ open: dropdownOpen }">
             <span class="username-trigger" @click="dropdownOpen = !dropdownOpen">
               {{ userInfo?.username }}
@@ -108,14 +151,14 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Message } from './utils/message'
-import type { PermissionCode, UserInfo } from './api'
+import type { UserInfo } from './api'
 import { useUserStore } from './stores/user'
 
 
 interface MenuItem {
   title: string
   path: string
-  permissions?: PermissionCode[]
+  children?: MenuItem[]
 }
 
 const route = useRoute()
@@ -124,51 +167,51 @@ const router = useRouter()
 const { userInfo, clearUser } = useUserStore()
 
 const dropdownOpen = ref<boolean>(false)
+const topSubMenu = ref<string>('')
+const sideSubMenu = ref<string>('')
+const subMenuPos = ref<{ left: number; top: number }>({ left: 0, top: 0 })
+let topSubMenuTimer: ReturnType<typeof setTimeout> | null = null
 
 const menus: MenuItem[] = [
   {
     title: '系统首页',
     path: '/dashboard',
-    },
+  },
   {
     title: '用户与权限管理',
     path: '/user-manage',
-    permissions: ['UC03']
   },
   {
     title: '数据分类管理',
     path: '/data-category',
-    permissions: ['UC04']
   },
   {
     title: '火点数据管理',
     path: '/fire-point',
-    permissions: ['UC05', 'UC06', 'UC07']
   },
   {
     title: '应急资源管理',
     path: '/emergency-resource',
-    permissions: ['UC08', 'UC09', 'UC10']
   },
   {
     title: '火险预警管理',
     path: '/warning',
-    permissions: ['UC11', 'UC12']
   },
   {
     title: '遥感影像管理',
     path: '/remote-image',
-    permissions: ['UC13', 'UC14']
+    children: [
+      { title: '遥感影像管理', path: '/remote-image' },
+      { title: '遥感影像上传', path: '/ndvi-viewer' }
+    ]
   },
   {
     title: '数据申请服务',
     path: '/data-application',
-    permissions: ['UC15', 'UC16']
   },
   {
     title: '系统运维管理',
     path: '/system-ops',
-    permissions: ['UC17', 'UC18']
   }
 ]
 
@@ -178,7 +221,7 @@ const isDashboardPage = computed<boolean>(() => route.path === '/dashboard')
 
 const isRegisterPage = computed<boolean>(() => route.path === '/register')
 
-const horizontalNavPaths = ['/warning', '/remote-image', '/data-application']
+const horizontalNavPaths = ['/warning', '/remote-image', '/ndvi-viewer', '/data-application']
 
 const isHorizontalNavPage = computed<boolean>(() => horizontalNavPaths.includes(route.path))
 
@@ -191,20 +234,59 @@ const visibleMenus = computed<MenuItem[]>(() => {
 
   if (!currentUser) return []
 
-  return menus.filter(menu => {
-    if (!menu.permissions || menu.permissions.length === 0) {
-      return true
-    }
-
-    return menu.permissions.some(permission =>
-      currentUser.permissions.includes(permission)
-    )
-  })
+  return menus
 })
 
 function logout(): void {
   clearUser()
   router.push('/login')
+}
+
+function isMenuActive(menu: MenuItem): boolean {
+  if (route.path === menu.path) return true
+  if (menu.children) {
+    return menu.children.some(child => route.path === child.path)
+  }
+  return false
+}
+
+const activeTopMenuChildren = computed<MenuItem[]>(() => {
+  if (!topSubMenu.value) return []
+  const menu = menus.find(m => m.path === topSubMenu.value)
+  return menu?.children || []
+})
+
+const subMenuStyle = computed(() => ({
+  left: subMenuPos.value.left + 'px',
+  top: subMenuPos.value.top + 'px'
+}))
+
+function openTopSubMenu(path: string, event: MouseEvent): void {
+  if (topSubMenuTimer) {
+    clearTimeout(topSubMenuTimer)
+    topSubMenuTimer = null
+  }
+  const el = (event.currentTarget as HTMLElement)
+  const rect = el.getBoundingClientRect()
+  subMenuPos.value = { left: rect.left, top: rect.bottom + 4 }
+  topSubMenu.value = path
+}
+
+function keepTopSubMenu(): void {
+  if (topSubMenuTimer) {
+    clearTimeout(topSubMenuTimer)
+    topSubMenuTimer = null
+  }
+}
+
+function closeTopSubMenu(): void {
+  topSubMenuTimer = setTimeout(() => {
+    topSubMenu.value = ''
+  }, 150)
+}
+
+function toggleSideSubMenu(path: string): void {
+  sideSubMenu.value = sideSubMenu.value === path ? '' : path
 }
 
 function goProfile(): void {
@@ -287,8 +369,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 2px;
   flex: 1;
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -346,6 +427,55 @@ onUnmounted(() => {
 
 .top-nav-text {
   white-space: nowrap;
+}
+
+.top-nav-submenu {
+  position: relative;
+}
+
+.submenu-arrow {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.top-nav-submenu:hover .submenu-arrow {
+  transform: rotate(180deg);
+}
+
+.top-nav-submenu.submenu-open .submenu-arrow {
+  transform: rotate(180deg);
+}
+
+.submenu-dropdown-fixed {
+  position: fixed;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  min-width: 140px;
+  z-index: 9999;
+  padding: 4px 0;
+}
+
+.submenu-item {
+  display: block;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #606266;
+  text-decoration: none;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.submenu-item:hover {
+  background: rgba(31, 143, 69, 0.06);
+  color: #1f8f45;
+}
+
+.submenu-item.active {
+  color: #1f8f45;
+  font-weight: 600;
+  background: rgba(31, 143, 69, 0.08);
 }
 
 .top-header-right {
@@ -457,6 +587,47 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-item .nav-arrow {
+  margin-left: auto;
+  transition: transform 0.25s;
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.nav-item .nav-arrow.open {
+  transform: rotate(180deg);
+  opacity: 1;
+}
+
+.nav-sub-list {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.nav-sub-item {
+  display: block;
+  padding: 10px 20px 10px 36px;
+  color: #c0c4cc;
+  text-decoration: none;
+  font-size: 13px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.nav-sub-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.nav-sub-item.active {
+  color: #ffd04b;
+  background: rgba(255, 208, 75, 0.08);
+}
+
 .main-container {
   flex: 1;
   display: flex;
@@ -485,33 +656,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.role-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  line-height: 22px;
-}
-
-.role-tag--admin {
-  background: #fef0f0;
-  color: #f56c6c;
-  border: 1px solid #fde2e2;
-}
-
-.role-tag--researcher {
-  background: #fdf6ec;
-  color: #e6a23c;
-  border: 1px solid #faecd8;
-}
-
-.role-tag--user {
-  background: #f0f9eb;
-  color: #67c23a;
-  border: 1px solid #e1f3d8;
 }
 
 .dropdown {

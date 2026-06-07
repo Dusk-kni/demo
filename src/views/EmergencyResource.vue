@@ -3,9 +3,9 @@
     <div class="page-title">应急资源管理</div>
 
     <div class="card" style="display:flex; gap:8px;">
-      <button v-if="canUpload" class="btn btn--primary">应急资源上传</button>
+      <button class="btn btn--primary">应急资源上传</button>
       <button class="btn btn--success">应急资源查询</button>
-      <button v-if="canDispatch" class="btn btn--warning">应急资源调度</button>
+      <button class="btn btn--warning">应急资源调度</button>
     </div>
 
     <div class="card">
@@ -32,14 +32,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useUserStore } from '../stores/user'
-
-const { hasPermission } = useUserStore()
-
-const canUpload = computed<boolean>(() => hasPermission('UC08'))
-const canDispatch = computed<boolean>(() => hasPermission('UC10'))
-
 const tableData = [
   {
     name: '凉山消防站',

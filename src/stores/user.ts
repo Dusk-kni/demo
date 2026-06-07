@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-import type { UserInfo, PermissionCode } from '../api'
+import type { UserInfo } from '../api'
 
 const userInfo = ref<UserInfo | null>(loadUserFromStorage())
 
@@ -30,18 +30,11 @@ function refreshUser(): void {
   userInfo.value = loadUserFromStorage()
 }
 
-function hasPermission(permission: PermissionCode): boolean {
-  if (!userInfo.value) return false
-
-  return userInfo.value.permissions.includes(permission)
-}
-
 export function useUserStore() {
   return {
     userInfo,
     setUser,
     clearUser,
-    refreshUser,
-    hasPermission
+    refreshUser
   }
 }

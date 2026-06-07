@@ -64,9 +64,7 @@
 
         <div class="account-tip">
           <div>测试账号：</div>
-          <div>系统管理员：admin / 123456</div>
-          <div>科研人员：researcher / 123456</div>
-          <div>普通用户：user / 123456</div>
+          <div>用户名：admin / 密码：123456</div>
         </div>
       </div>
     </div>
@@ -130,20 +128,25 @@ async function handleLogin(): Promise<void> {
 
   loading.value = true
 
-  const res = await loginApi({
-    username: loginForm.username,
-    password: loginForm.password
-  })
+  try {
+    const res = await loginApi({
+      username: loginForm.username,
+      password: loginForm.password
+    })
 
-  loading.value = false
+    loading.value = false
 
-  if (res.code === 200 && res.data) {
-    localStorage.setItem('token', res.data.token)
-    setUser(res.data.userInfo)
-    Message.success('登录成功')
-    router.push('/dashboard')
-  } else {
-    Message.error(res.message || '登录失败')
+    if (res.code === 200 && res.data) {
+      localStorage.setItem('token', res.data.token)
+      setUser(res.data.userInfo)
+      Message.success('登录成功')
+      router.push('/dashboard')
+    } else {
+      Message.error(res.message || '登录失败')
+    }
+  } catch {
+    loading.value = false
+    Message.error('登录请求异常，请稍后重试')
   }
 }
 </script>
