@@ -12,28 +12,36 @@
       <div class="right-section">
         <div class="alert-header">
           <h2 class="alert-title">报警信息列表</h2>
-          <button class="filter-btn" @click="showFilter = !showFilter">
-            按编号分类
-            <svg class="filter-icon" viewBox="0 0 12 12" fill="none">
-              <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
-
-        <div v-if="showFilter" class="filter-bar">
-          <select v-model="filterLevel" class="filter-select">
-            <option value="">全部等级</option>
-            <option value="red">红色预警</option>
-            <option value="orange">橙色预警</option>
-            <option value="yellow">黄色预警</option>
-            <option value="blue">蓝色预警</option>
-          </select>
-          <input
-            v-model="searchKeyword"
-            type="text"
-            class="filter-input"
-            placeholder="搜索地点..."
-          />
+          <div class="sort-dropdown" :class="{ open: showSortMenu }">
+            <button class="sort-btn" @click="showSortMenu = !showSortMenu">
+              {{ sortMode === 'time' ? '按时间分类' : '按编号分类' }}
+              <svg class="sort-icon" viewBox="0 0 12 12" fill="none">
+                <path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <div v-if="showSortMenu" class="sort-menu">
+              <div
+                class="sort-option"
+                :class="{ active: sortMode === 'time' }"
+                @click="changeSortMode('time')"
+              >
+                按时间分类
+                <svg v-if="sortMode === 'time'" class="check-icon" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div
+                class="sort-option"
+                :class="{ active: sortMode === 'id' }"
+                @click="changeSortMode('id')"
+              >
+                按编号分类
+                <svg v-if="sortMode === 'id'" class="check-icon" viewBox="0 0 12 12" fill="none">
+                  <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="alert-list">
@@ -140,9 +148,8 @@ let map: L.Map | null = null
 let chartInstance: echarts.ECharts | null = null
 let markersLayer: L.LayerGroup | null = null
 
-const showFilter = ref(false)
-const filterLevel = ref('')
-const searchKeyword = ref('')
+const showSortMenu = ref(false)
+const sortMode = ref<'time' | 'id'>('time')
 const currentPage = ref(1)
 const pageSize = 8
 const lastUpdateTime = ref('')
@@ -176,18 +183,15 @@ const allAlerts = ref<AlertInfo[]>([
 ])
 
 const filteredAlerts = computed<AlertInfo[]>(() => {
-  let result = allAlerts.value
+  const result = allAlerts.value.slice()
 
-  if (filterLevel.value) {
-    result = result.filter(a => a.level === filterLevel.value)
+  if (sortMode.value === 'time') {
+    result.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+  } else {
+    result.sort((a, b) => a.id - b.id)
   }
 
-  if (searchKeyword.value.trim()) {
-    const kw = searchKeyword.value.trim().toLowerCase()
-    result = result.filter(a => a.location.toLowerCase().includes(kw))
-  }
-
-  return result.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+  return result
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredAlerts.value.length / pageSize)))
@@ -340,7 +344,7 @@ function initTrendChart(): void {
       axisPointer: { type: 'cross' }
     },
     legend: {
-      data: ['低危险度', '黄色预警', '橙色预警', '红色预警'],
+      data: ['蓝色预警', '黄色预警', '红色预警'],
       bottom: 0,
       textStyle: { fontSize: 11, color: '#666' },
       itemWidth: 16,
@@ -366,7 +370,7 @@ function initTrendChart(): void {
     },
     series: [
       {
-        name: '低危险度',
+        name: '蓝色预警',
         type: 'line',
         smooth: true,
         data: data.lowRisk,
@@ -394,7 +398,7 @@ function initTrendChart(): void {
         itemStyle: { color: '#e6a23c' }
       },
       {
-        name: '橙色预警',
+        name: '红色预警',
         type: 'line',
         smooth: true,
         data: data.highRisk,
@@ -407,15 +411,6 @@ function initTrendChart(): void {
         lineStyle: { color: '#f56c6c', width: 2 },
         itemStyle: { color: '#f56c6c' }
       },
-      {
-        name: '红色预警',
-        type: 'line',
-        smooth: true,
-        data: data.criticalRisk,
-        lineStyle: { color: '#c0392b', width: 2.5 },
-        itemStyle: { color: '#c0392b' },
-        symbolSize: 6
-      }
     ]
   }
 
@@ -428,16 +423,14 @@ function refreshData(): void {
   initTrendChart()
 }
 
+function changeSortMode(mode: 'time' | 'id'): void {
+  sortMode.value = mode
+  showSortMenu.value = false
+  currentPage.value = 1
+}
+
 watch(currentPage, () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
-})
-
-watch(filterLevel, () => {
-  currentPage.value = 1
-})
-
-watch(searchKeyword, () => {
-  currentPage.value = 1
 })
 
 onMounted(async () => {
@@ -447,6 +440,7 @@ onMounted(async () => {
   refreshData()
 
   window.addEventListener('resize', handleResize)
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
@@ -461,7 +455,15 @@ onUnmounted(() => {
   }
 
   window.removeEventListener('resize', handleResize)
+  document.removeEventListener('click', handleClickOutside)
 })
+
+function handleClickOutside(e: MouseEvent): void {
+  const target = e.target as HTMLElement
+  if (!target.closest('.sort-dropdown')) {
+    showSortMenu.value = false
+  }
+}
 
 function handleResize(): void {
   chartInstance?.resize()
@@ -559,7 +561,11 @@ function handleResize(): void {
   margin: 0;
 }
 
-.filter-btn {
+.sort-dropdown {
+  position: relative;
+}
+
+.sort-btn {
   padding: 6px 14px;
   background: #f5f7fa;
   border: 1px solid #dcdfe6;
@@ -573,40 +579,71 @@ function handleResize(): void {
   transition: all 0.2s;
 }
 
-.filter-btn:hover {
+.sort-btn:hover {
   border-color: #1f8f45;
   color: #1f8f45;
 }
 
-.filter-icon {
+.sort-dropdown.open .sort-btn {
+  border-color: #1f8f45;
+  color: #1f8f45;
+}
+
+.sort-icon {
   width: 12px;
   height: 12px;
   transition: transform 0.2s;
 }
 
-.filter-bar {
-  padding: 12px 20px;
-  border-bottom: 1px solid #ebeef5;
+.sort-dropdown.open .sort-icon {
+  transform: rotate(180deg);
+}
+
+.sort-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 140px;
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 2000;
+  padding: 4px 0;
+  animation: sortMenuIn 0.15s ease;
+}
+
+@keyframes sortMenuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.sort-option {
   display: flex;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.filter-select,
-.filter-input {
-  flex: 1;
-  height: 32px;
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  padding: 0 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 16px;
   font-size: 13px;
-  outline: none;
-  transition: border-color 0.2s;
+  color: #606266;
+  cursor: pointer;
+  transition: all 0.15s;
 }
 
-.filter-select:focus,
-.filter-input:focus {
-  border-color: #1f8f45;
+.sort-option:hover {
+  background: #f5f7fa;
+  color: #1f8f45;
+}
+
+.sort-option.active {
+  color: #1f8f45;
+  font-weight: 600;
+}
+
+.check-icon {
+  width: 12px;
+  height: 12px;
+  color: #1f8f45;
+  flex-shrink: 0;
 }
 
 .alert-list {

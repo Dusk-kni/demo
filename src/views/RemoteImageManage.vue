@@ -6,12 +6,12 @@
         <div class="hero-left">
           <div class="hero-text">
             <p class="hero-desc">
-              中国遥感卫星地面站对地观测数据共享计划（网址http://ids.ceode.ac.cn）于2011年开始实施，目前已将LANDSAT-5、LANDSAT-7、LANDSAT-8、RESOURCESAT-1、ERS-1/2、ENVISAT等多颗卫星的符合国际标准的数据产品向全国进行免费共享。自2022年开始，中国遥感卫星地面站正式委托国家对地观测科学数据中心发布中国遥感卫星地面站共享数据专用门户，在国家综合地球观测数据共享平台继续推进对地观测数据共享计划，保持共享数据资源的持续更新。
+              森林具有覆盖范围广、地形复杂、地面监测盲区多的特点，传统地面巡检、摄像头监控难以实现全域、全天候监测，而遥感卫星（Sentinel-2/MODIS/Landsat-9 等）、航空遥感能快速获取大范围地表影像，通过影像的光谱特征（如火灾高温异常、植被燃烧的红外波段特征）可精准识别火点位置、燃烧状态。
             </p>
             <div class="stat-grid" v-if="stats">
               <div class="stat-item">
                 <div class="stat-value">{{ stats.totalScenes }}</div>
-                <div class="stat-label">系统共享数据景数</div>
+                <div class="stat-label">系统共享数据集数</div>
               </div>
               <div class="stat-item">
                 <div class="stat-value">{{ stats.totalDataSize }}</div>
@@ -40,7 +40,7 @@
         </div>
         <div class="hero-right">
           <div class="satellite-img-wrap">
-            <img class="satellite-img" src="https://picsum.photos/seed/satellite-earth/480/260" alt="卫星遥感影像" />
+            <img class="satellite-img" src="/public/image/remotesatellite.webp" alt="卫星遥感影像" />
           </div>
           <div class="search-bar">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -400,21 +400,9 @@ onMounted(() => {
 .hero-bg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 75% 25%, rgba(64, 158, 255, 0.18) 0%, transparent 60%),
-    linear-gradient(135deg, #0a1628 0%, #102a43 35%, #0d2137 70%, #071220 100%);
+  background: url('/image/remote-hero.webp') center center / cover no-repeat;
   z-index: 0;
-}
-
-.hero-bg::after {
-  content: '';
-  position: absolute;
-  right: -60px;
-  top: -80px;
-  width: 520px;
-  height: 340px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 55% 45%, rgba(79, 172, 254, 0.22) 0%, transparent 65%);
+  transform: translateZ(0);
 }
 
 .hero-content {
@@ -455,7 +443,8 @@ onMounted(() => {
 }
 
 .hero-desc {
-  font-size: 13px;
+  font-size: 20px;
+  font-family: '楷体';
   line-height: 1.8;
   letter-spacing: 0.5px;
   opacity: 0.88;
@@ -478,7 +467,8 @@ onMounted(() => {
 }
 
 .stat-item .stat-label {
-  font-size: 13px;
+  font-size: 15px;
+  font-family: '楷体';
   margin-top: 4px;
   opacity: 0.72;
   letter-spacing: 0.5px;
@@ -566,6 +556,7 @@ onMounted(() => {
 }
 
 .search-input {
+  font-family: '楷体';
   flex: 1;
   border: none;
   outline: none;
@@ -731,40 +722,43 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 0;
+  padding: 9px 0;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   cursor: pointer;
-  transition: all 0.25s;
+  transition: all 0.2s ease;
   white-space: nowrap;
-  letter-spacing: 0.5px;
+  letter-spacing: 1px;
   line-height: 1.4;
 }
 
 .btn:disabled {
-  opacity: 0.5;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
 .btn--outline {
-  background: transparent;
-  color: #409eff;
-  border: 1px solid #409eff;
+  background: #ffffff;
+  color: #17a2b8;
+  border: 1px solid #17a2b8;
 }
 
 .btn--outline:hover:not(:disabled) {
-  background: #ecf5ff;
+  background: #eaf7f9;
+  border-color: #138496;
+  color: #138496;
 }
 
 .btn--primary {
-  background: #67c23a;
-  color: #fff;
-  border: 1px solid #67c23a;
+  background: #ffffff;
+  color: #52c41a;
+  border: 1px solid #52c41a;
 }
 
 .btn--primary:hover:not(:disabled) {
-  background: #529b2e;
-  border-color: #529b2e;
+  background: #f0faf3;
+  border-color: #42ad12;
+  color: #42ad12;
 }
 
 .grid-skeleton {

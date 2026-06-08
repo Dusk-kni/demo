@@ -413,7 +413,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 4464,
     downloads: 174,
     captureTime: '1995-11 ~ 2011-07',
-    thumbnail: 'https://picsum.photos/seed/rs-ers2-sar/280/180',
+    thumbnail: '/public/image/ERS-2卫星.webp',
     status: '可申请'
   },
   {
@@ -427,7 +427,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 5310,
     downloads: 23,
     captureTime: '2005-01 ~ 2012-12',
-    thumbnail: 'https://picsum.photos/seed/rs-liss3/280/180',
+    thumbnail: '/public/image/原始遥感影像数据集.webp',
     status: '可申请'
   },
   {
@@ -441,7 +441,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 2804,
     downloads: 22,
     captureTime: '2005-01 ~ 2012-12',
-    thumbnail: 'https://picsum.photos/seed/rs-awifs/280/180',
+    thumbnail: '/public/image/森林火灾遥感影像.webp',
     status: '可申请'
   },
   {
@@ -455,7 +455,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 2848,
     downloads: 6,
     captureTime: '2005-01 ~ 2010-12',
-    thumbnail: 'https://picsum.photos/seed/rs-liss4/280/180',
+    thumbnail: '/public/image/IRS-P6.webp',
     status: '处理中'
   },
   {
@@ -469,7 +469,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 12450,
     downloads: 892,
     captureTime: '1986-01 ~ 2011-06',
-    thumbnail: 'https://picsum.photos/seed/rs-tm/280/180',
+    thumbnail: '/public/image/Landsat-5.webp',
     status: '可申请'
   },
   {
@@ -483,7 +483,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 8920,
     downloads: 456,
     captureTime: '2003-05 ~ 2024-12',
-    thumbnail: 'https://picsum.photos/seed/rs-etm/280/180',
+    thumbnail: '/public/image/Sentinel-5p.webp',
     status: '可申请'
   },
   {
@@ -497,7 +497,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 15230,
     downloads: 1203,
     captureTime: '2015-06 ~ 2026-04',
-    thumbnail: 'https://picsum.photos/seed/rs-s2l1c/280/180',
+    thumbnail: '/public/image/Sentinel-5p.webp',
     status: '可申请'
   },
   {
@@ -511,7 +511,7 @@ const mockRemoteImages: RemoteImageItem[] = [
     views: 3100,
     downloads: 78,
     captureTime: '2000-02 ~ 2026-04',
-    thumbnail: 'https://picsum.photos/seed/rs-modis/280/180',
+    thumbnail: '/public/image/Sentinel-5p.webp',
     status: '处理中'
   },
   {
