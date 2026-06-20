@@ -178,10 +178,6 @@ const menus: MenuItem[] = [
     path: '/dashboard',
   },
   {
-    title: '用户与权限管理',
-    path: '/user-manage',
-  },
-  {
     title: '数据分类管理',
     path: '/data-category',
   },
@@ -200,10 +196,6 @@ const menus: MenuItem[] = [
   {
     title: '遥感影像管理',
     path: '/remote-image',
-    children: [
-      { title: '遥感影像管理', path: '/remote-image' },
-      { title: '遥感影像上传', path: '/ndvi-viewer' }
-    ]
   },
   {
     title: '数据申请服务',
@@ -221,7 +213,7 @@ const isDashboardPage = computed<boolean>(() => route.path === '/dashboard')
 
 const isRegisterPage = computed<boolean>(() => route.path === '/register')
 
-const horizontalNavPaths = ['/warning', '/remote-image', '/ndvi-viewer', '/data-application']
+const horizontalNavPaths = ['/warning', '/remote-image', '/data-application', '/data-category', '/fire-point', '/emergency-resource', '/system-ops']
 
 const isHorizontalNavPage = computed<boolean>(() => horizontalNavPaths.includes(route.path))
 

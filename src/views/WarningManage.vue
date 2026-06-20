@@ -301,7 +301,6 @@ function generateTrendData() {
   const lowRisk: number[] = []
   const mediumRisk: number[] = []
   const highRisk: number[] = []
-  const criticalRisk: number[] = []
 
   const today = new Date()
   for (let i = 29; i >= 0; i--) {
@@ -312,10 +311,11 @@ function generateTrendData() {
     lowRisk.push(Math.floor(Math.random() * 15) + 5)
     mediumRisk.push(Math.floor(Math.random() * 10) + 8)
     highRisk.push(Math.floor(Math.random() * 8) + 3)
-    criticalRisk.push(Math.floor(Math.random() * 5) + 1)
+
+
   }
 
-  return { dates, lowRisk, mediumRisk, highRisk, criticalRisk }
+  return { dates, lowRisk, mediumRisk, highRisk }
 }
 
 function initTrendChart(): void {
@@ -512,12 +512,12 @@ function handleResize(): void {
   left: 16px;
   right: 16px;
   height: 220px;
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   z-index: 1000;
   padding: 12px 16px;
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(10px);
 }
 
 .chart-header {

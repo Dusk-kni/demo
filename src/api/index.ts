@@ -30,6 +30,181 @@ export interface LoginResult {
   userInfo: UserInfo
 }
 
+// ==================== 数据分类管理接口 ====================
+
+export interface DataCategory {
+  cate_id: number
+  cate_name: string
+  description: string
+}
+
+export interface DataCategoryCreate {
+  cate_name: string
+  description?: string
+}
+
+/**
+ * 获取数据分类列表
+ */
+export function getCategoriesApi(): Promise<ApiResponse<DataCategory[]>> {
+  return service.get('/category/list')
+}
+
+/**
+ * 创建数据分类
+ */
+export function createCategoryApi(data: DataCategoryCreate): Promise<ApiResponse<any>> {
+  return service.post('/category/create', data)
+}
+
+/**
+ * 更新数据分类
+ */
+export function updateCategoryApi(data: { cate_id: number; cate_name?: string; description?: string }): Promise<ApiResponse<any>> {
+  return service.put('/category/update', data)
+}
+
+/**
+ * 删除数据分类
+ */
+export function deleteCategoryApi(cate_id: number): Promise<ApiResponse<any>> {
+  return service.delete('/category/delete', { params: { cate_id } })
+}
+
+// ==================== 火点数据管理接口 ====================
+
+export interface FirePoint {
+  fid: number
+  latitude: number
+  longitude: number
+  lat: number
+  lon: number
+  level?: string
+  name?: string
+  temperature?: number
+  time?: string
+  source?: string
+  brightness?: number
+  confidence?: string
+  acq_date?: string
+  audit_status?: string
+}
+
+/**
+ * 获取火点列表
+ */
+export function getFirePointsApi(skip = 0, limit = 10): Promise<ApiResponse<FirePoint[]>> {
+  return service.get('/fire/list', { params: { skip, limit } })
+}
+
+/**
+ * 上传火点数据
+ */
+export function createFirePointApi(data: Omit<FirePoint, 'fid'>): Promise<ApiResponse<any>> {
+  return service.post('/fire/upload', data)
+}
+
+/**
+ * 审核火点数据
+ */
+export function checkFirePointApi(fid: number, status: string): Promise<ApiResponse<any>> {
+  return service.post('/fire/check', { fid, status })
+}
+
+// ==================== 应急资源管理接口 ====================
+
+export interface EmergencyResource {
+  region: string
+  code: string
+  res_id: number
+  name: string
+  type: string
+  latitude: number
+  longitude: number
+  lat: number
+  lon: number
+  phone?: string
+  status?: string
+}
+
+/**
+ * 获取应急资源列表
+ */
+export function getEmergencyResourcesApi(): Promise<ApiResponse<EmergencyResource[]>> {
+  return service.get('/resource/list')
+}
+
+// ==================== 火险热力接口 ====================
+
+export interface RiskHeatPoint {
+  lat: number
+  lon: number
+  value: number
+  level: string
+}
+
+/**
+ * 获取火险热力数据
+ */
+export function getRiskHeatApi(): Promise<ApiResponse<RiskHeatPoint[]>> {
+  return service.get('/risk/heat')
+}
+
+/**
+ * 上传应急资源
+ */
+export function createResourceApi(data: Omit<EmergencyResource, 'res_id'>): Promise<ApiResponse<any>> {
+  return service.post('/resource/upload', data)
+}
+
+/**
+ * 调度应急资源
+ */
+export function dispatchResourceApi(data: {
+  res_id: number
+  dispatch_location: string
+  dispatch_quantity: number
+  dispatch_reason: string
+}): Promise<ApiResponse<any>> {
+  return service.post('/resource/dispatch', data)
+}
+
+// ==================== 系统运维管理接口 ====================
+
+export interface SystemLog {
+  log_id: number
+  operation: string
+  operate_time: string
+}
+
+export interface DataBackup {
+  backup_id: number
+  backup_name: string
+  backup_path: string
+  backup_time: string
+}
+
+/**
+ * 获取系统日志
+ */
+export function getLogsApi(): Promise<ApiResponse<SystemLog[]>> {
+  return service.get('/log/list')
+}
+
+/**
+ * 获取备份列表
+ */
+export function getBackupsApi(): Promise<ApiResponse<DataBackup[]>> {
+  return service.get('/backup/list')
+}
+
+/**
+ * 创建备份
+ */
+export function createBackupApi(admin_id: number, name: string, path: string): Promise<ApiResponse<any>> {
+  return service.post('/backup/create', { admin_id, name, path })
+}
+
 const service: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
   timeout: 15000,
@@ -65,21 +240,8 @@ service.interceptors.response.use(
   }
 )
 
-function mockRequest<T>(data: T, delay = 500): Promise<ApiResponse<T>> {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      resolve({
-        code: 200,
-        message: 'success',
-        data
-      })
-    }, delay)
-  })
-}
+// ==================== 用户管理接口 ====================
 
-
-
-/* ---------- 新增：用于 mock 持久化的用户类型 ---------- */
 export interface StoredUser extends UserInfo {
   password: string
   phone?: string
@@ -87,74 +249,15 @@ export interface StoredUser extends UserInfo {
   status?: '正常' | '已禁用'
 }
 
-/* 默认用户（首运行时会写入 localStorage.mockUsers） */
-const defaultStoredUsers: StoredUser[] = [
-  {
-    id: 1,
-    username: 'admin',
-    nickname: '管理员',
-    password: '123456',
-    phone: '13800000000',
-    status: '正常'
-  },
-  {
-    id: 2,
-    username: 'researcher',
-    nickname: '研究员',
-    password: '123456',
-    phone: '13800000001',
-    status: '正常'
-  },
-  {
-    id: 3,
-    username: 'user',
-    nickname: '普通用户',
-    password: '123456',
-    phone: '13800000002',
-    status: '正常'
-  }
-]
-
-const MOCK_USERS_VERSION = 3
-
-function loadStoredUsers(): StoredUser[] {
-  const key = 'mockUsers'
-  const versionKey = 'mockUsersVersion'
-  const str = localStorage.getItem(key)
-  const version = localStorage.getItem(versionKey)
-
-  if (!str || Number(version) < MOCK_USERS_VERSION) {
-    localStorage.setItem(key, JSON.stringify(defaultStoredUsers))
-    localStorage.setItem(versionKey, String(MOCK_USERS_VERSION))
-    return defaultStoredUsers.slice()
-  }
-
-  try {
-    const parsed = JSON.parse(str) as StoredUser[]
-    return parsed
-  } catch {
-    localStorage.setItem(key, JSON.stringify(defaultStoredUsers))
-    localStorage.setItem(versionKey, String(MOCK_USERS_VERSION))
-    return defaultStoredUsers.slice()
-  }
-}
-
-function saveStoredUsers(users: StoredUser[]): void {
-  localStorage.setItem('mockUsers', JSON.stringify(users))
-}
-
-/* ---------- CRUD 接口（mock） ---------- */
-
 /**
- * 获取所有用户（mock）
+ * 获取所有用户
  */
 export function getUsersApi(): Promise<ApiResponse<StoredUser[]>> {
-  const users = loadStoredUsers()
-  return mockRequest(users)
+  return service.get('/user/list')
 }
 
 /**
- * 新增用户（mock）
+ * 新增用户
  */
 export function addUserApi(
   data: {
@@ -165,152 +268,43 @@ export function addUserApi(
     email?: string
   }
 ): Promise<ApiResponse<StoredUser | null>> {
-  const users = loadStoredUsers()
-
-  if (users.some(u => u.username === data.username)) {
-    return Promise.resolve({
-      code: 400,
-      message: '用户名已存在',
-      data: null
-    })
-  }
-
-  const id = Date.now()
-
-  const newUser: StoredUser = {
-    id,
-    username: data.username,
-    nickname: data.nickname ?? data.username,
-    password: data.password,
-    phone: data.phone ?? '',
-    email: data.email ?? '',
-    status: '正常'
-  }
-
-  users.push(newUser)
-  saveStoredUsers(users)
-
-  return mockRequest(newUser)
+  return service.post('/user/create', data)
 }
 
 /**
- * 更新用户（支持 partial 更新，password 可选）
+ * 更新用户
  */
 export function updateUserApi(
   data: Partial<StoredUser> & { id: number }
 ): Promise<ApiResponse<StoredUser | null>> {
-  const users = loadStoredUsers()
-  const idx = users.findIndex(u => u.id === data.id)
-
-  if (idx === -1) {
-    return Promise.resolve({
-      code: 404,
-      message: '用户不存在',
-      data: null
-    })
-  }
-
-  const existing = users[idx]
-
-  const updated: StoredUser = {
-    ...existing,
-    ...data
-  } as StoredUser
-
-  if (data.password === undefined) {
-    updated.password = existing.password
-  }
-
-  users[idx] = updated
-  saveStoredUsers(users)
-
-  return mockRequest(updated)
+  return service.put('/user/update', data)
 }
 
 /**
- * 删除用户（mock）
+ * 删除用户
  */
 export function deleteUserApi(id: number): Promise<ApiResponse<null>> {
-  let users = loadStoredUsers()
-  users = users.filter(u => u.id !== id)
-  saveStoredUsers(users)
-
-  return mockRequest<null>(null)
+  return service.delete('/user/delete', { params: { id } })
 }
 
-/* ---------- 登录逻辑（纯 mock，仅验证用户名+密码） ---------- */
+// ==================== 认证接口 ====================
 
+/**
+ * 用户登录
+ */
 export function loginApi(
   data: LoginParams
 ): Promise<ApiResponse<LoginResult | null>> {
-  const { username, password } = data
-
-  const users = loadStoredUsers()
-
-  const matched = users.find(u => u.username === username)
-
-  if (!matched) {
-    return Promise.resolve({
-      code: 401,
-      message: '用户名不存在',
-      data: null
-    })
-  }
-
-  if (matched.password !== password) {
-    return Promise.resolve({
-      code: 401,
-      message: '密码错误',
-      data: null
-    })
-  }
-
-  return mockRequest<LoginResult>({
-    token: `mock-token-${matched.id}`,
-    userInfo: {
-      id: matched.id,
-      username: matched.username,
-      nickname: matched.nickname
-    }
-  })
+  return service.post('/auth/login', data)
 }
 
-/* ---------- 注册接口（mock） ---------- */
+/**
+ * 用户注册
+ */
 export function registerApi(
   data: RegisterParams
 ): Promise<ApiResponse<LoginResult | null>> {
-  const users = loadStoredUsers()
-
-  if (users.some(u => u.username === data.username)) {
-    return Promise.resolve({
-      code: 400,
-      message: '用户名已存在',
-      data: null
-    })
-  }
-
-  const id = Date.now()
-
-  const newUser: StoredUser = {
-    id,
-    username: data.username,
-    nickname: data.nickname ?? data.username,
-    password: data.password,
-    email: data.email ?? '',
-    status: '正常'
-  }
-
-  users.push(newUser)
-  saveStoredUsers(users)
-
-  return mockRequest<LoginResult>({
-    token: `mock-token-${id}`,
-    userInfo: {
-      id,
-      username: newUser.username,
-      nickname: newUser.nickname
-    }
-  })
+  return service.post('/auth/register', data)
 }
 
 /* ---------- 保持原有的 getCurrentUser ---------- */
@@ -326,36 +320,7 @@ export function getCurrentUser(): UserInfo | null {
   }
 }
 
-/* ---------- 其余原有 mock 数据接口（火点 / 火险 / 应急资源）保持不变 ---------- */
-
-export interface FirePoint {
-  id: number
-  name: string
-  lon: number
-  lat: number
-  level: string
-  temperature: number
-  time: string
-  source: string
-}
-
-export interface RiskHeatPoint {
-  lon: number
-  lat: number
-  value: number
-  level: string
-}
-
-export interface EmergencyResource {
-  id: number
-  name: string
-  type: string
-  lon: number
-  lat: number
-  phone: string
-}
-
-/* ---------- 遥感影像管理 mock 接口 ---------- */
+/* ---------- 遥感影像管理接口 ---------- */
 
 export interface RemoteImageItem {
   id: number
@@ -401,337 +366,38 @@ export interface ApplyImageData {
   email: string
 }
 
-const mockRemoteImages: RemoteImageItem[] = [
-  {
-    id: 1,
-    name: '1995年11月-2011年7月中国区域ERS-2-SAR原始遥感影像数据集',
-    source: 'ERS-2',
-    resolution: '30m',
-    cloudCover: '15%',
-    sceneCount: '20,173',
-    dataSize: '6.77TB',
-    views: 4464,
-    downloads: 174,
-    captureTime: '1995-11 ~ 2011-07',
-    thumbnail: '/public/image/ERS-2卫星.webp',
-    status: '可申请'
-  },
-  {
-    id: 2,
-    name: '2005-2012年中国区域IRS-P6-LISS3原始遥感影像数据集',
-    source: 'IRS-P6',
-    resolution: '23.5m',
-    cloudCover: '10%',
-    sceneCount: '7,869',
-    dataSize: '1.28TB',
-    views: 5310,
-    downloads: 23,
-    captureTime: '2005-01 ~ 2012-12',
-    thumbnail: '/public/image/原始遥感影像数据集.webp',
-    status: '可申请'
-  },
-  {
-    id: 3,
-    name: '2005-2012年中国区域IRS-P6-AWIFS原始遥感影像数据集',
-    source: 'IRS-P6',
-    resolution: '56m',
-    cloudCover: '8%',
-    sceneCount: '2,295',
-    dataSize: '1.12TB',
-    views: 2804,
-    downloads: 22,
-    captureTime: '2005-01 ~ 2012-12',
-    thumbnail: '/public/image/森林火灾遥感影像.webp',
-    status: '可申请'
-  },
-  {
-    id: 4,
-    name: '2005-2010年中国区域IRS-P6-LISS4原始遥感影像数据集',
-    source: 'IRS-P6',
-    resolution: '5.8m',
-    cloudCover: '12%',
-    sceneCount: '14,624',
-    dataSize: '3.58TB',
-    views: 2848,
-    downloads: 6,
-    captureTime: '2005-01 ~ 2010-12',
-    thumbnail: '/public/image/IRS-P6.webp',
-    status: '处理中'
-  },
-  {
-    id: 5,
-    name: 'Landsat-5 TM 原始遥感影像数据集（1986-2011）',
-    source: 'Landsat-5',
-    resolution: '30m',
-    cloudCover: '5%',
-    sceneCount: '42,459',
-    dataSize: '15TB',
-    views: 12450,
-    downloads: 892,
-    captureTime: '1986-01 ~ 2011-06',
-    thumbnail: '/public/image/Landsat-5.webp',
-    status: '可申请'
-  },
-  {
-    id: 6,
-    name: 'Landsat-7 ETM+ SLC-off 原始遥感影像数据集',
-    source: 'Landsat-7',
-    resolution: '30m',
-    cloudCover: '20%',
-    sceneCount: '10,209',
-    dataSize: '20.05TB',
-    views: 8920,
-    downloads: 456,
-    captureTime: '2003-05 ~ 2024-12',
-    thumbnail: '/public/image/Sentinel-5p.webp',
-    status: '可申请'
-  },
-  {
-    id: 7,
-    name: 'Sentinel-2 L1C 原始遥感影像数据集',
-    source: 'Sentinel-2',
-    resolution: '10m',
-    cloudCover: '3%',
-    sceneCount: '13,412',
-    dataSize: '6.61TB',
-    views: 15230,
-    downloads: 1203,
-    captureTime: '2015-06 ~ 2026-04',
-    thumbnail: '/public/image/Sentinel-5p.webp',
-    status: '可申请'
-  },
-  {
-    id: 8,
-    name: 'MODIS 每日地表反射率产品数据集',
-    source: 'MODIS',
-    resolution: '250m',
-    cloudCover: '-',
-    sceneCount: '暂',
-    dataSize: '暂',
-    views: 3100,
-    downloads: 78,
-    captureTime: '2000-02 ~ 2026-04',
-    thumbnail: '/public/image/Sentinel-5p.webp',
-    status: '处理中'
-  },
-  {
-    id: 9,
-    name: 'HJ-1A/1B CCD 多光谱遥感影像数据集',
-    source: 'HJ-1',
-    resolution: '30m',
-    cloudCover: '8%',
-    sceneCount: '35,200',
-    dataSize: '8.5TB',
-    views: 6780,
-    downloads: 345,
-    captureTime: '2008-09 ~ 2024-12',
-    thumbnail: 'https://picsum.photos/seed/rs-hj1/280/180',
-    status: '可申请'
-  },
-  {
-    id: 10,
-    name: 'GF-1 WFV 宽幅多光谱影像数据集',
-    source: 'GF-1',
-    resolution: '16m',
-    cloudCover: '6%',
-    sceneCount: '28,900',
-    dataSize: '12.3TB',
-    views: 9100,
-    downloads: 567,
-    captureTime: '2013-04 ~ 2026-03',
-    thumbnail: 'https://picsum.photos/seed/rs-gf1/280/180',
-    status: '可申请'
-  },
-  {
-    id: 11,
-    name: 'GF-2 PMS 高分辨率多光谱影像数据集',
-    source: 'GF-2',
-    resolution: '4m',
-    cloudCover: '4%',
-    sceneCount: '18,600',
-    dataSize: '25.8TB',
-    views: 11200,
-    downloads: 890,
-    captureTime: '2014-08 ~ 2026-04',
-    thumbnail: 'https://picsum.photos/seed/rs-gf2/280/180',
-    status: '已申请'
-  },
-  {
-    id: 12,
-    name: 'ZY-3 三线阵立体测绘影像数据集',
-    source: 'ZY-3',
-    resolution: '2.1m',
-    cloudCover: '7%',
-    sceneCount: '9,800',
-    dataSize: '18.6TB',
-    views: 5600,
-    downloads: 234,
-    captureTime: '2012-01 ~ 2025-12',
-    thumbnail: 'https://picsum.photos/seed/rs-zy3/280/180',
-    status: '可申请'
-  }
-]
-
+/**
+ * 获取遥感影像统计数据
+ */
 export function getRemoteImageStatsApi(): Promise<ApiResponse<RemoteImageStats>> {
-  return mockRequest<RemoteImageStats>({
-    totalScenes: '640,226',
-    totalDataSize: '807.41TB',
-    totalUsers: '77,403人',
-    totalServices: '84,221',
-    totalDatasets: '16',
-    totalStorage: '30.15PB'
-  })
+  return service.get('/remote-image/stats')
 }
 
+/**
+ * 获取遥感影像列表
+ */
 export function getRemoteImagesApi(
   params: RemoteImageListParams
 ): Promise<ApiResponse<RemoteImageListResult>> {
-  let filtered = mockRemoteImages.slice()
-
-  if (params.keyword) {
-    const kw = params.keyword.toLowerCase()
-    filtered = filtered.filter(item => item.name.toLowerCase().includes(kw) || item.source.toLowerCase().includes(kw))
-  }
-
-  if (params.source) {
-    filtered = filtered.filter(item => item.source === params.source)
-  }
-
-  const total = filtered.length
-  const start = (params.page - 1) * params.pageSize
-  const list = filtered.slice(start, start + params.pageSize)
-
-  return mockRequest<RemoteImageListResult>({
-    list,
-    total,
-    page: params.page,
-    pageSize: params.pageSize
-  })
+  return service.get('/remote-image/list', { params })
 }
 
+/**
+ * 获取遥感影像详情
+ */
 export function getRemoteImageDetailApi(
   id: number
 ): Promise<ApiResponse<RemoteImageItem | null>> {
-  const item = mockRemoteImages.find(i => i.id === id)
-  return mockRequest<RemoteImageItem | null>(item ?? null)
+  return service.get('/remote-image/detail', { params: { id } })
 }
 
+/**
+ * 申请遥感影像数据
+ */
 export function applyRemoteImageApi(
   data: ApplyImageData
 ): Promise<ApiResponse<{ applyId: number }>> {
-  const target = mockRemoteImages.find(i => i.id === data.imageId)
-  if (target) {
-    target.status = '已申请'
-  }
-  return mockRequest<{ applyId: number }>({ applyId: Date.now() })
-}
-
-/**
- * 获取火点数据
- */
-export function getFirePointsApi(): Promise<ApiResponse<FirePoint[]>> {
-  return mockRequest<FirePoint[]>([
-    {
-      id: 1,
-      name: '火点001',
-      lon: 102.25,
-      lat: 27.88,
-      level: '高',
-      temperature: 68,
-      time: '2026-04-06 14:30:00',
-      source: 'Sentinel-2'
-    },
-    {
-      id: 2,
-      name: '火点002',
-      lon: 103.05,
-      lat: 28.12,
-      level: '中',
-      temperature: 51,
-      time: '2026-04-06 15:10:00',
-      source: 'MODIS'
-    },
-    {
-      id: 3,
-      name: '火点003',
-      lon: 101.86,
-      lat: 28.42,
-      level: '较高',
-      temperature: 59,
-      time: '2026-04-06 16:20:00',
-      source: 'Landsat-9'
-    }
-  ])
-}
-
-/**
- * 获取火险等级热力数据
- */
-export function getRiskHeatApi(): Promise<ApiResponse<RiskHeatPoint[]>> {
-  return mockRequest<RiskHeatPoint[]>([
-    {
-      lon: 102.1,
-      lat: 27.9,
-      value: 90,
-      level: '高'
-    },
-    {
-      lon: 102.4,
-      lat: 28.1,
-      value: 76,
-      level: '较高'
-    },
-    {
-      lon: 103.0,
-      lat: 28.0,
-      value: 63,
-      level: '中'
-    },
-    {
-      lon: 101.8,
-      lat: 28.3,
-      value: 52,
-      level: '中'
-    },
-    {
-      lon: 103.4,
-      lat: 27.7,
-      value: 35,
-      level: '较低'
-    }
-  ])
-}
-
-/**
- * 获取应急资源数据
- */
-export function getEmergencyResourcesApi(): Promise<ApiResponse<EmergencyResource[]>> {
-  return mockRequest<EmergencyResource[]>([
-    {
-      id: 1,
-      name: '凉山消防站',
-      type: '消防站',
-      lon: 102.18,
-      lat: 27.92,
-      phone: '119'
-    },
-    {
-      id: 2,
-      name: '应急水源点A',
-      type: '水源',
-      lon: 102.36,
-      lat: 27.96,
-      phone: '-'
-    },
-    {
-      id: 3,
-      name: '直升机临时起降点',
-      type: '直升机坪',
-      lon: 102.55,
-      lat: 28.05,
-      phone: '0834-xxxxxxx'
-    }
-  ])
+  return service.post('/remote-image/apply', data)
 }
 
 export default service

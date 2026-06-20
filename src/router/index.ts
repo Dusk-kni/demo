@@ -5,13 +5,11 @@ import Profile from '../views/Profile.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Dashboard from '../views/Dashboard.vue'
-import UserManage from '../views/UserManage.vue'
 import DataCategory from '../views/DataCategory.vue'
 import FirePointManage from '../views/FirePointManage.vue'
 import EmergencyResource from '../views/EmergencyResource.vue'
 import WarningManage from '../views/WarningManage.vue'
 import RemoteImageManage from '../views/RemoteImageManage.vue'
-import NdviViewer from '../views/NdviViewer.vue'
 import DataApplication from '../views/DataApplication.vue'
 import SystemOps from '../views/SystemOps.vue'
 
@@ -58,14 +56,6 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
-    path: '/user-manage',
-    component: UserManage,
-    meta: {
-      title: '用户与权限管理',
-      requiresAuth: true
-    }
-  },
-  {
     path: '/data-category',
     component: DataCategory,
     meta: {
@@ -102,14 +92,6 @@ const routes: RouteRecordRaw[] = [
     component: RemoteImageManage,
     meta: {
       title: '遥感影像管理',
-      requiresAuth: true
-    }
-  },
-  {
-    path: '/ndvi-viewer',
-    component: NdviViewer,
-    meta: {
-      title: '遥感影像上传',
       requiresAuth: true
     }
   },

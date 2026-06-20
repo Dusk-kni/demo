@@ -311,13 +311,13 @@ function updateTime(): void {
 function initMap(): void {
   map = L.map('dashboard-map', {
     center: [30.67, 104.06],
-    zoom: 7,
+    zoom: 8,
     zoomControl: false
   })
 
   L.control.zoom({ position: 'bottomright' }).addTo(map)
 
-  L.tileLayer(
+  L.tileLayer( //瓦片地图
     'https://webst0{s}.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}',
     {
       attribution: '© 高德地图',
@@ -327,7 +327,7 @@ function initMap(): void {
     }
   ).addTo(map)
 
-  L.tileLayer(
+  L.tileLayer( //路网标注
     'https://webst0{s}.is.autonavi.com/appmaptile?style=8&x={x}&y={y}&z={z}',
     {
       attribution: '© 高德地图',
@@ -393,7 +393,7 @@ async function loadFirePoints(): Promise<void> {
       else if (item.level === '低' || item.level === '较低') levelClass = 'low'
 
       return {
-        id: item.id,
+        id: item.fid,
         name: item.name,
         level: item.level,
         levelClass,
@@ -623,7 +623,6 @@ function initWarningDistChart(): void {
         },
         data: [
           { value: 5, name: '红色预警', itemStyle: { color: '#f56c6c' } },
-          { value: 8, name: '橙色预警', itemStyle: { color: '#e6a23c' } },
           { value: 12, name: '黄色预警', itemStyle: { color: '#ffd666' } },
           { value: 7, name: '蓝色预警', itemStyle: { color: '#409eff' } }
         ]

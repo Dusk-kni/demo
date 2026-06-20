@@ -30,11 +30,17 @@ function refreshUser(): void {
   userInfo.value = loadUserFromStorage()
 }
 
+function hasPermission(code: string): boolean {
+  if (!userInfo.value) return false
+  return true
+}
+
 export function useUserStore() {
   return {
     userInfo,
     setUser,
     clearUser,
-    refreshUser
+    refreshUser,
+    hasPermission
   }
 }
